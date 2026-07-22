@@ -1,0 +1,65 @@
+/* ============================================================
+   DASHBOARD LAYOUT
+   Sidebar sits INSIDE the flex row — no position:fixed needed.
+   ============================================================ */
+
+.layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.06), transparent 26%),
+    radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.08), transparent 32%),
+    var(--color-bg-app);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: var(--z-overlay);
+  animation: fadeIn var(--transition-fast) ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* prevent flex overflow */
+  height: 100vh;
+  background: rgba(248, 250, 252, 0.82);
+}
+
+.pageContent {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-6) var(--space-5) var(--space-10);
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .pageContent {
+    padding: var(--space-8) var(--space-8) var(--space-12);
+  }
+}
+
+.pageInner {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100%;
+  animation: slideUp var(--transition-base) ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

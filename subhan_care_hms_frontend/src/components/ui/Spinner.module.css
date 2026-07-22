@@ -1,0 +1,37 @@
+.spinner {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.5s;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.size-sm { width: 1rem; height: 1rem; border-width: 2px; }
+.size-md { width: 1.5rem; height: 1.5rem; border-width: 2px; }
+.size-lg { width: 2.5rem; height: 2.5rem; border-width: 3px; }
+
+.color-primary { color: var(--color-primary-600, #2563eb); }
+.color-secondary { color: var(--color-neutral-500, #6b7280); }
+.color-white { color: #ffffff; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

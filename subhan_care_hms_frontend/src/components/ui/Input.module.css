@@ -1,0 +1,108 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.label {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-neutral-700);
+}
+
+.inputContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  height: var(--input-height);
+  padding: 0 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-900);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-card);
+  transition: all var(--transition-fast);
+}
+
+.hasIcon {
+  padding-left: 42px;
+}
+
+.hasPasswordToggle {
+  padding-right: 60px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+  background: #ffffff;
+}
+
+.input:disabled {
+  background-color: var(--color-neutral-100);
+  cursor: not-allowed;
+}
+
+.hasError {
+  border-color: var(--color-danger-500);
+}
+.hasError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-neutral-400);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 14px;
+  color: var(--color-primary-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  background: rgba(37, 99, 235, 0.08);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+}
+
+.passwordToggle:hover {
+  background: rgba(37, 99, 235, 0.14);
+  color: var(--color-primary-700);
+}
+
+.message {
+  margin: 0;
+  font-size: 12px;
+}
+
+.errorMessage {
+  font-size: 12px;
+  color: var(--color-danger-500);
+}
+
+.helperMessage {
+  font-size: 12px;
+  color: var(--color-neutral-400);
+}
