@@ -1,22 +1,24 @@
 .card {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-card);
-  padding: var(--card-padding);     /* 20px per team spec */
+  padding: var(--card-padding);
   transition: all var(--transition-fast);
   box-shadow: var(--shadow-xs);
   overflow: hidden;
   backdrop-filter: blur(10px);
+  transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
-.clickable {
-  cursor: pointer;
-}
-
+.clickable { cursor: pointer; }
 .clickable:hover {
-  border-color: var(--color-primary-200);
+  border-color: rgba(8, 145, 178, 0.28);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+}
+.clickable:focus-visible {
+  outline: 3px solid rgba(8, 145, 178, 0.2);
+  outline-offset: 3px;
 }
 
 .header {
@@ -29,9 +31,7 @@
   border-bottom: 1px solid var(--color-neutral-100);
 }
 
-.body {
-  width: 100%;
-}
+.body { width: 100%; }
 
 .footer {
   margin-top: var(--space-4);

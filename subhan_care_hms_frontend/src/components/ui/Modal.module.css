@@ -11,8 +11,8 @@
 }
 
 .modal {
-  background-color: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(226, 232, 240, 0.96);
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
   width: 100%;

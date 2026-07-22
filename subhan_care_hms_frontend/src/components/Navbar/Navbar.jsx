@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { ROLE_LABELS, ROLES } from '@/constants/roles';
-import { Menu, Bell, ChevronRight, Shield, Check, ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, Bell, ChevronRight, Shield, Check, ChevronDown, PanelLeftClose, PanelLeftOpen, MoonStar, SunMedium } from 'lucide-react';
 import styles from './Navbar.module.css';
 
 const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   const { user, switchRole } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -22,14 +24,13 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const generateBreadcrumbs = () => {
+  const breadcrumbs = useMemo(() => {
     const paths = location.pathname.split('/').filter(p => p);
     return paths.map(path =>
       path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ')
     );
-  };
+  }, [location.pathname]);
 
-  const breadcrumbs = generateBreadcrumbs();
   const currentRoleLabel = user?.role ? ROLE_LABELS[user.role] || user.role : 'Guest';
   const pageTitle = breadcrumbs.length ? breadcrumbs[breadcrumbs.length - 1] : 'Dashboard';
 
@@ -102,7 +103,16 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
           )}
         </div>
 
-        <button className={styles.iconBtn} aria-label="Notifications">
+        <button
+          className={styles.iconBtn}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={toggleTheme}
+          type="button"
+        >
+          {theme === 'dark' ? <SunMedium size={18} /> : <MoonStar size={18} />}
+        </button>
+
+        <button className={styles.iconBtn} aria-label="Notifications" type="button">
           <Bell size={18} />
           <span className={styles.notifDot}></span>
         </button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { PUBLIC_ROUTES, PRIVATE_ROUTES } from '@/constants/routes';
@@ -8,11 +8,11 @@ import toast from 'react-hot-toast';
 import styles from './LoginPage.module.css';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@subhancare.com', role: 'System Admin', color: '#2563eb' },
-  { email: 'dr.ahmed@subhancare.com', role: 'Doctor', color: '#22c55e' },
-  { email: 'reception@subhancare.com', role: 'Receptionist', color: '#f59e0b' },
-  { email: 'pharma@subhancare.com', role: 'Pharmacist', color: '#8b5cf6' },
-  { email: 'billing@subhancare.com', role: 'Billing Staff', color: '#ef4444' },
+  { email: 'admin@gmail.com', role: 'System Admin', color: '#0891b2' },
+  { email: 'dr.ahmed@gmail.com', role: 'Doctor', color: '#059669' },
+  { email: 'reception@gmail.com', role: 'Receptionist', color: '#f59e0b' },
+  { email: 'pharma@gmail.com', role: 'Pharmacist', color: '#8b5cf6' },
+  { email: 'billing@gmail.com', role: 'Billing Staff', color: '#ef4444' },
 ];
 
 const LoginPage = () => {
@@ -21,17 +21,20 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const emailInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
       toast.error('Please enter both email and password');
       return;
     }
 
     try {
       setIsLoading(true);
-      await login(email, password);
+      await login(normalizedEmail, password);
       toast.success('Signed in successfully');
       navigate(PRIVATE_ROUTES.DASHBOARD, { replace: true });
     } catch (error) {
@@ -44,13 +47,17 @@ const LoginPage = () => {
   const handleDemoLogin = (demoEmail) => {
     setEmail(demoEmail);
     setPassword('password123');
+    window.requestAnimationFrame(() => {
+      emailInputRef.current?.focus();
+      emailInputRef.current?.select();
+    });
   };
 
   return (
     <div className={styles.container}>
-      {/* Left Panel - Brand Header & Demo Roles */}
       <div className={styles.brandPanel}>
         <div className={styles.brandContent}>
+          <div className={styles.eyebrow}>Accessible healthcare operations</div>
           <div className={styles.logo}>
             <div className={styles.logoIcon}>
               <HeartPulse size={30} color="#ffffff" />
@@ -58,16 +65,27 @@ const LoginPage = () => {
             <h1>Subhan Care</h1>
           </div>
           <p className={styles.tagline}>
-            Hospital Management System — Comprehensive digital solution for clinical workflows, patient records, and billing.
+            A calm, trustworthy hospital operating system for patient care, role-aware coordination, and compliant workflows.
           </p>
 
-          {/* Quick Demo Login Cards */}
+          <div className={styles.trustBar}>
+            <span>WCAG-ready experience</span>
+            <span>24/7 clinical visibility</span>
+            <span>Secure role access</span>
+          </div>
+
+          <ul className={styles.featureList}>
+            <li>Streamlined patient journeys from registration to discharge</li>
+            <li>Shared views for appointments, billing, and inventory</li>
+            <li>Keyboard-first interactions with strong contrast and focus states</li>
+          </ul>
+
           <div className={styles.demoSection}>
             <div className={styles.demoHeader}>
               <Shield size={16} color="var(--color-primary-300)" />
-              <h3 className={styles.demoTitle}>RBAC Demo Accounts (SRS Sec 4)</h3>
+              <h3 className={styles.demoTitle}>RBAC Demo Accounts</h3>
             </div>
-            <p className={styles.demoDesc}>Click a role to auto-fill credentials for testing:</p>
+            <p className={styles.demoDesc}>Choose a role to auto-fill the demo credentials.</p>
             <div className={styles.demoList}>
               {DEMO_ACCOUNTS.map(acc => (
                 <button
@@ -75,6 +93,7 @@ const LoginPage = () => {
                   className={styles.demoItem}
                   onClick={() => handleDemoLogin(acc.email)}
                   type="button"
+                  aria-label={`Fill demo credentials for ${acc.role}`}
                 >
                   <span className={styles.demoDot} style={{ background: acc.color }}></span>
                   <span className={styles.demoRole}>{acc.role}</span>
@@ -87,7 +106,6 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right Panel - Login Form */}
       <div className={styles.formPanel}>
         <div className={styles.formContainer}>
           <div className={styles.mobileLogo}>
@@ -104,14 +122,20 @@ const LoginPage = () => {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <Input
+              ref={emailInputRef}
               label="Email Address"
               type="email"
-              placeholder="name@subhancare.com"
+              placeholder="name@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               icon={<Mail size={18} />}
               disabled={isLoading}
+              autoComplete="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
             />
 
             <Input
@@ -124,6 +148,7 @@ const LoginPage = () => {
               icon={<Lock size={18} />}
               disabled={isLoading}
               showPasswordToggle
+              autoComplete="current-password"
             />
 
             <div className={styles.formActions}>
@@ -150,7 +175,6 @@ const LoginPage = () => {
             </Button>
           </form>
 
-          {/* Mobile Demo Chips */}
           <div className={styles.mobileDemos}>
             <p className={styles.mobileDemoTitle}>Quick Fill Roles:</p>
             <div className={styles.mobileDemoChips}>

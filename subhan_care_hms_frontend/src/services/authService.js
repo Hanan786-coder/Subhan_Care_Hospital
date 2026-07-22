@@ -16,40 +16,40 @@ import api from './api';
  */
 
 const MOCK_USERS = {
-  'admin@subhancare.com': {
+  'admin@gmail.com': {
     id: 'usr-001',
     name: 'Muhammad Subhan',
-    email: 'admin@subhancare.com',
+    email: 'admin@gmail.com',
     role: 'ADMIN',
     designation: 'System Administrator',
   },
-  'dr.ahmed@subhancare.com': {
+  'dr.ahmed@gmail.com': {
     id: 'usr-002',
     name: 'Dr. Ahmed Khan',
-    email: 'dr.ahmed@subhancare.com',
+    email: 'dr.ahmed@gmail.com',
     role: 'DOCTOR',
     designation: 'Cardiologist',
     licenseNumber: 'PMC-12345',
     specialization: 'Cardiology',
   },
-  'reception@subhancare.com': {
+  'reception@gmail.com': {
     id: 'usr-003',
     name: 'Ayesha Siddiqui',
-    email: 'reception@subhancare.com',
+    email: 'reception@gmail.com',
     role: 'RECEPTIONIST',
     designation: 'Front Desk Receptionist',
   },
-  'pharma@subhancare.com': {
+  'pharma@gmail.com': {
     id: 'usr-004',
     name: 'Ali Hassan',
-    email: 'pharma@subhancare.com',
+    email: 'pharma@gmail.com',
     role: 'PHARMACIST',
     designation: 'Chief Pharmacist',
   },
-  'billing@subhancare.com': {
+  'billing@gmail.com': {
     id: 'usr-005',
     name: 'Fatima Zahra',
-    email: 'billing@subhancare.com',
+    email: 'billing@gmail.com',
     role: 'BILLING_STAFF',
     designation: 'Billing & Finance Officer',
   },
@@ -64,13 +64,14 @@ export const loginUser = async (credentials) => {
   // MOCK: Simulate network delay
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (!credentials.email || !credentials.password) {
+      const normalizedEmail = String(credentials.email || '').trim().toLowerCase();
+      if (!normalizedEmail || !credentials.password) {
         reject(new Error('Email and password are required.'));
         return;
       }
 
       // Look up email in mock database
-      const mockUser = MOCK_USERS[credentials.email.toLowerCase()];
+      const mockUser = MOCK_USERS[normalizedEmail];
 
       if (mockUser) {
         resolve({
@@ -84,7 +85,7 @@ export const loginUser = async (credentials) => {
           user: {
             id: 'usr-999',
             name: 'Demo User',
-            email: credentials.email,
+            email: normalizedEmail,
             role: 'ADMIN',
             designation: 'Administrator',
           },

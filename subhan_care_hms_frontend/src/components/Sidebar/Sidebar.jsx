@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { ROLE_MENU_CONFIG, ROLE_LABELS } from '@/constants/roles';
@@ -30,7 +30,7 @@ const Sidebar = ({ isOpen, isMobile, onClose, onToggle }) => {
   const navigate = useNavigate();
 
   const allowedItemIds = user && user.role ? ROLE_MENU_CONFIG[user.role] : [];
-  const menuItems = FULL_MENU.filter(item => allowedItemIds.includes(item.id));
+  const menuItems = useMemo(() => FULL_MENU.filter(item => allowedItemIds.includes(item.id)), [allowedItemIds]);
 
   const handleLogout = useCallback(() => {
     logout();

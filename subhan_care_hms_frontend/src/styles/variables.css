@@ -1,45 +1,42 @@
 /* ============================================================
-  SUBHAN CARE HMS — Healthcare Design Tokens
-  Theme: Blue Primary (#2563EB) + Green Secondary (#22C55E)
+  SUBHAN CARE HMS — Accessible Healthcare Design Tokens
+  Theme: Calm cyan + health green for trust, clarity, and WCAG-ready UI
   ============================================================ */
 
 :root {
-  /* ---- Primary Blue ---- */
+  color-scheme: light;
   --color-primary-950: #0f172a;
-  --color-primary-900: #1e3a8a;
-  --color-primary-800: #1d4ed8;
-  --color-primary-700: #1d4ed8;
-  --color-primary-600: #2563eb;
-  --color-primary-500: #2563eb;
-  --color-primary-400: #3b82f6;
-  --color-primary-300: #60a5fa;
-  --color-primary-200: #bfdbfe;
-  --color-primary-100: #dbeafe;
-  --color-primary-50:  #eff6ff;
+  --color-primary-900: #164e63;
+  --color-primary-800: #0f766e;
+  --color-primary-700: #0e7490;
+  --color-primary-600: #0891b2;
+  --color-primary-500: #0891b2;
+  --color-primary-400: #22d3ee;
+  --color-primary-300: #67e8f9;
+  --color-primary-200: #a5f3fc;
+  --color-primary-100: #cffafe;
+  --color-primary-50:  #ecfeff;
 
-  /* ---- Secondary / Success Green ---- */
-  --color-secondary-600: #16a34a;
-  --color-secondary-500: #22c55e;
-  --color-secondary-400: #4ade80;
-  --color-secondary-300: #86efac;
-  --color-secondary-100: #dcfce7;
-  --color-secondary-50:  #f0fdf4;
+  --color-secondary-600: #047857;
+  --color-secondary-500: #059669;
+  --color-secondary-400: #10b981;
+  --color-secondary-300: #34d399;
+  --color-secondary-100: #d1fae5;
+  --color-secondary-50:  #ecfdf5;
 
-  --color-success-700: #15803d;
-  --color-success-600: #16a34a;
-  --color-success-500: #22c55e;
-  --color-success-100: #dcfce7;
-  --color-success-50:  #f0fdf4;
+  --color-success-700: #047857;
+  --color-success-600: #059669;
+  --color-success-500: #10b981;
+  --color-success-100: #d1fae5;
+  --color-success-50:  #ecfdf5;
 
-  /* Accent aliases used by existing components */
-  --color-accent-600: #16a34a;
-  --color-accent-500: #22c55e;
-  --color-accent-400: #4ade80;
-  --color-accent-300: #86efac;
-  --color-accent-100: #dcfce7;
-  --color-accent-50:  #f0fdf4;
+  --color-accent-600: #047857;
+  --color-accent-500: #059669;
+  --color-accent-400: #10b981;
+  --color-accent-300: #34d399;
+  --color-accent-100: #d1fae5;
+  --color-accent-50:  #ecfdf5;
 
-  /* ---- Semantic Colors ---- */
   --color-danger-700: #b91c1c;
   --color-danger-600: #dc2626;
   --color-danger-500: #ef4444;
@@ -51,39 +48,40 @@
   --color-warning-100: #fef3c7;
   --color-warning-50:  #fffbeb;
 
-  --color-info-700: #0369a1;
-  --color-info-500: #0ea5e9;
-  --color-info-100: #e0f2fe;
-  --color-info-50:  #f0f9ff;
+  --color-info-700: #0f766e;
+  --color-info-500: #0891b2;
+  --color-info-100: #cffafe;
+  --color-info-50:  #ecfeff;
 
-  /* ---- Background & Surface ---- */
-  --color-bg-app: #f8fafc;
+  --color-bg-app: #ecfeff;
   --color-surface-card: #ffffff;
+  --color-surface-muted: #f8fbfc;
+  --color-border-soft: rgba(15, 76, 92, 0.12);
+  --color-text-strong: #164e63;
+  --color-text-muted: #456a76;
 
-  /* ---- Neutrals ---- */
-  --color-neutral-900: #0f172a;
-  --color-neutral-800: #1e293b;
-  --color-neutral-700: #334155;
-  --color-neutral-600: #475569;
+  --color-neutral-900: #164e63;
+  --color-neutral-800: #0f4c5c;
+  --color-neutral-700: #1f5f73;
+  --color-neutral-600: #456a76;
   --color-neutral-500: #64748b;
   --color-neutral-400: #94a3b8;
   --color-neutral-300: #cbd5e1;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-50:  #f8fafc;
+  --color-neutral-200: #dbeafe;
+  --color-neutral-100: #eef7f8;
+  --color-neutral-50:  #f8fbfc;
   --color-neutral-0:   #ffffff;
 
-  /* ---- Typography ---- */
-  --font-family: 'Poppins', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family: 'Figtree', 'Noto Sans', 'Segoe UI', Roboto, sans-serif;
 
-  --font-size-xs:   0.75rem;   /* 12px */
-  --font-size-sm:   0.8125rem; /* 13px */
-  --font-size-base: 0.875rem;  /* 14px */
-  --font-size-md:   1rem;      /* 16px */
-  --font-size-lg:   1.125rem;  /* 18px */
-  --font-size-xl:   1.25rem;   /* 20px */
-  --font-size-2xl:  1.5rem;    /* 24px */
-  --font-size-3xl:  1.875rem;  /* 30px */
+  --font-size-xs:   0.75rem;
+  --font-size-sm:   0.875rem;
+  --font-size-base: 1rem;
+  --font-size-md:   1.125rem;
+  --font-size-lg:   1.25rem;
+  --font-size-xl:   1.5rem;
+  --font-size-2xl:  1.875rem;
+  --font-size-3xl:  2.25rem;
 
   --font-weight-normal:   400;
   --font-weight-medium:   500;
@@ -94,13 +92,12 @@
   --line-height-normal:   1.5;
   --line-height-relaxed:  1.65;
 
-  /* ---- Dimensions & Radii ---- */
-  --radius-card:    10px;
-  --radius-button:  8px;
-  --radius-sm:      6px;
-  --radius-md:      8px;
-  --radius-lg:      12px;
-  --radius-xl:      16px;
+  --radius-card:    16px;
+  --radius-button:  999px;
+  --radius-sm:      8px;
+  --radius-md:      10px;
+  --radius-lg:      14px;
+  --radius-xl:      20px;
   --radius-full:    9999px;
 
   --spacing:        16px;
@@ -117,31 +114,53 @@
   --space-16:       4rem;
 
   --card-padding:   20px;
-  --input-height:   45px;
+  --input-height:   48px;
 
-  /* ---- Elevation & Shadows ---- */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.03);
-  --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 35px rgba(7, 28, 48, 0.15);
+  --shadow-xs: 0 1px 2px rgba(22, 78, 99, 0.05);
+  --shadow-sm: 0 8px 20px rgba(22, 78, 99, 0.08);
+  --shadow-md: 0 12px 30px rgba(22, 78, 99, 0.12);
+  --shadow-lg: 0 18px 36px rgba(8, 145, 178, 0.16);
+  --shadow-xl: 0 24px 40px rgba(8, 145, 178, 0.18);
 
-  /* ---- Transitions ---- */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Layout dimensions */
-  --sidebar-width: 255px;
-  --sidebar-collapsed-width: 72px;
-  --navbar-height: 68px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 76px;
+  --navbar-height: 72px;
   --content-max-width: 1400px;
 
-  /* Z-Index */
   --z-dropdown:  100;
   --z-sticky:    200;
   --z-overlay:   300;
   --z-modal:     400;
   --z-toast:     500;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg-app: #071118;
+  --color-surface-card: #0e1c26;
+  --color-surface-muted: #152734;
+  --color-border-soft: rgba(255, 255, 255, 0.18);
+  --color-text-strong: #ffffff;
+  --color-text-muted: #cbd5e1;
+  --color-neutral-900: #ffffff;
+  --color-neutral-800: #f1f5f9;
+  --color-neutral-700: #e2e8f0;
+  --color-neutral-600: #cbd5e1;
+  --color-neutral-500: #94a3b8;
+  --color-neutral-400: #64748b;
+  --color-neutral-300: #475569;
+  --color-neutral-200: #334155;
+  --color-neutral-100: #1e293b;
+  --color-neutral-50:  #0f172a;
+  --color-neutral-0:   #040a0f;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.62);
+  --shadow-lg: 0 18px 36px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 24px 40px rgba(0, 0, 0, 0.8);
 }

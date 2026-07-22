@@ -9,6 +9,12 @@ import {
 } from 'lucide-react';
 import styles from './DashboardHome.module.css';
 
+const HERO_FEATURES = [
+  { title: 'Accessible by design', body: 'Clear contrast and focused pathways for every care role.' },
+  { title: 'Built for trust', body: 'Professional, calm visuals that support critical hospital operations.' },
+  { title: 'Operational clarity', body: 'See the status of care, billing, and inventory at a glance.' },
+];
+
 const StatCard = ({ title, value, icon: Icon, trend, colorClass }) => (
   <div className={styles.statCard}>
     <div className={styles.statTop}>
@@ -136,7 +142,7 @@ const DashboardHome = () => {
           </div>
           <div className={styles.headerActions}>
             <Badge variant="active">{user?.role}</Badge>
-            <Button variant="primary" icon={<Plus size={16} />}>New Task</Button>
+            <Button variant="secondary" icon={<Plus size={16} />}>New Task</Button>
           </div>
         </div>
 
@@ -153,6 +159,15 @@ const DashboardHome = () => {
             <span>Status</span>
             <strong>Live workspace</strong>
           </div>
+        </div>
+
+        <div className={styles.heroFeatures}>
+          {HERO_FEATURES.map((feature) => (
+            <div key={feature.title} className={styles.heroFeatureCard}>
+              <strong>{feature.title}</strong>
+              <p>{feature.body}</p>
+            </div>
+          ))}
         </div>
       </div>
 

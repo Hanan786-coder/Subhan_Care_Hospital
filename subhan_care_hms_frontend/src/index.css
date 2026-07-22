@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=Noto+Sans:wght@400;500;700&display=swap');
 
 /* ============================================================
   SUBHAN CARE HMS — Global Styles
@@ -21,6 +21,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -29,12 +30,13 @@ body {
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
   color: var(--color-neutral-900);
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 24%),
-    linear-gradient(180deg, #ffffff 0%, var(--color-bg-app) 100%);
+  background: var(--color-bg-app);
   min-height: 100vh;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  scrollbar-gutter: stable;
+  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+  transform: translateZ(0);
 }
 
 body::before {
@@ -43,10 +45,16 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(15, 76, 92, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 76, 92, 0.06) 1px, transparent 1px);
   background-size: 32px 32px;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 80%);
+}
+
+:root[data-theme='dark'] body::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
 #root {
@@ -55,6 +63,7 @@ body::before {
   flex-direction: column;
   position: relative;
   isolation: isolate;
+  background: transparent;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -66,10 +75,10 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 { font-size: var(--font-size-3xl); }
 h2 { font-size: var(--font-size-2xl); }
-h3 { font-size: var(--font-size-xl);  }
-h4 { font-size: var(--font-size-lg);  }
-h5 { font-size: var(--font-size-md);  }
-h6 { font-size: var(--font-size-base);}
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+h5 { font-size: var(--font-size-md); }
+h6 { font-size: var(--font-size-base); }
 
 p {
   margin-bottom: var(--space-3);
@@ -77,7 +86,7 @@ p {
 }
 
 a {
-  color: var(--color-primary-500);
+  color: var(--color-primary-600);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
@@ -86,8 +95,60 @@ a:hover {
   color: var(--color-primary-700);
 }
 
+button,
+a,
+[role='button'],
+summary {
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  cursor: text;
+}
+
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  border: none;
+  background: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible {
+  outline: 3px solid rgba(8, 145, 178, 0.6);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.18);
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  background: var(--color-neutral-900);
+  color: var(--color-neutral-0);
+  border-radius: var(--radius-sm);
+  transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
 ::selection {
-  background: rgba(37, 99, 235, 0.16);
+  background: rgba(8, 145, 178, 0.16);
   color: var(--color-neutral-900);
 }
 
@@ -99,16 +160,9 @@ button {
   font-size: inherit;
 }
 
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-}
-
-/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -121,7 +175,6 @@ button {
   background: var(--color-neutral-400);
 }
 
-/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -139,5 +192,11 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body::before {
+    display: none;
   }
 }
