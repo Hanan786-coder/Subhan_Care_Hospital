@@ -1,15 +1,13 @@
 {
-  "name": "hz-intern",
+  "name": "subhan_care_hms_root",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "description": "Root project running frontend and backend concurrently",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd subhan_care_hms_backend && npm run dev",
+    "frontend": "cd subhan_care_hms_frontend && npm run dev"
   },
-  "dependencies": {
-    "uipro-cli": "^2.2.3"
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
