@@ -20,6 +20,11 @@ export const updateDoctor = async (id, doctorData) => {
   return response.data;
 };
 
+export const updateDoctorSchedule = async (id, schedule) => {
+  const response = await api.put(`/doctors/${id}/schedule`, { schedule });
+  return response.data;
+};
+
 export const deactivateDoctor = async (id) => {
   const response = await api.patch(`/doctors/${id}/deactivate`);
   return response.data;

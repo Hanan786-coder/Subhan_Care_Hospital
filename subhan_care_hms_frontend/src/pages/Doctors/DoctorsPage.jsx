@@ -1,22 +1,56 @@
 import React, { useEffect, useState } from 'react';
-import { getDoctors, deactivateDoctor } from '../../services/doctorService';
-import { Card, CardHeader, CardBody, Button, Badge, Spinner } from '../../components/ui';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import styles from '../Patients/Patients.module.css'; // Reuse styles
+import { getDoctors, createDoctor, updateDoctor, updateDoctorSchedule, deactivateDoctor } from '../../services/doctorService';
+import { Card, CardBody, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
+import { Plus, Edit, Trash2, Search, Calendar } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
+import styles from '../Patients/Patients.module.css';
 
 const DoctorList = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  // Modals state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    specialization: 'General Physician',
+    qualification: 'MBBS',
+    licenseNumber: '',
+    phone: '',
+    email: '',
+    password: '',
+    consultationFee: 1500
+  });
+
+  const [scheduleData, setScheduleData] = useState([
+    { day: 'Monday', isWorking: true, startTime: '09:00', endTime: '17:00', maxPatients: 20 },
+    { day: 'Tuesday', isWorking: true, startTime: '09:00', endTime: '17:00', maxPatients: 20 },
+    { day: 'Wednesday', isWorking: true, startTime: '09:00', endTime: '17:00', maxPatients: 20 },
+    { day: 'Thursday', isWorking: true, startTime: '09:00', endTime: '17:00', maxPatients: 20 },
+    { day: 'Friday', isWorking: true, startTime: '09:00', endTime: '17:00', maxPatients: 20 },
+    { day: 'Saturday', isWorking: false, startTime: '09:00', endTime: '13:00', maxPatients: 10 },
+    { day: 'Sunday', isWorking: false, startTime: '09:00', endTime: '13:00', maxPatients: 0 },
+  ]);
 
   useEffect(() => {
     fetchDoctors();
-  }, []);
+  }, [statusFilter]);
 
   const fetchDoctors = async () => {
     setLoading(true);
     try {
-      const data = await getDoctors();
+      const data = await getDoctors(statusFilter ? { status: statusFilter } : {});
       setDoctors(data.data || []);
       setError(null);
     } catch (err) {
@@ -26,24 +60,157 @@ const DoctorList = () => {
     }
   };
 
+  const handleOpenCreateModal = () => {
+    setEditingDoctor(null);
+    setFormData({
+      fullName: '',
+      specialization: 'General Physician',
+      qualification: 'MBBS',
+      licenseNumber: '',
+      phone: '',
+      email: '',
+      password: '',
+      consultationFee: 1500
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (doc) => {
+    setEditingDoctor(doc);
+    setFormData({
+      fullName: doc.fullName || '',
+      specialization: doc.specialization || 'General Physician',
+      qualification: doc.qualification || 'MBBS',
+      licenseNumber: doc.licenseNumber || '',
+      phone: doc.contactInfo?.phone || '',
+      email: doc.contactInfo?.email || doc.userId?.email || '',
+      password: '',
+      consultationFee: doc.consultationFee || 1500
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenScheduleModal = (doc) => {
+    setEditingDoctor(doc);
+    if (doc.schedule && doc.schedule.length > 0) {
+      setScheduleData(doc.schedule);
+    }
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleSubmitDoctor = async (e) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.licenseNumber) {
+      toast.error('Name and License Number are required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        fullName: formData.fullName,
+        specialization: formData.specialization,
+        qualification: formData.qualification,
+        licenseNumber: formData.licenseNumber,
+        contactInfo: {
+          phone: formData.phone,
+          email: formData.email
+        },
+        consultationFee: Number(formData.consultationFee),
+        email: formData.email,
+        password: formData.password || undefined,
+        schedule: scheduleData
+      };
+
+      if (editingDoctor) {
+        await updateDoctor(editingDoctor._id, payload);
+        toast.success('Doctor profile updated');
+      } else {
+        await createDoctor(payload);
+        toast.success('Doctor created successfully');
+      }
+      setIsModalOpen(false);
+      fetchDoctors();
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to save doctor');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveSchedule = async (e) => {
+    e.preventDefault();
+    if (!editingDoctor) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateDoctorSchedule(editingDoctor._id, scheduleData);
+      toast.success('Doctor weekly schedule updated');
+      setIsScheduleModalOpen(false);
+      fetchDoctors();
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to update schedule');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to deactivate this doctor?')) {
+    if (window.confirm('Are you sure you want to deactivate this doctor? New appointment bookings will be blocked.')) {
       try {
         await deactivateDoctor(id);
+        toast.success('Doctor profile deactivated');
         fetchDoctors();
       } catch (err) {
-        alert('Failed to deactivate doctor.');
+        toast.error('Failed to deactivate doctor.');
       }
     }
   };
 
+  const filteredDoctors = doctors.filter(doc => {
+    const q = search.toLowerCase();
+    return !q || doc.fullName?.toLowerCase().includes(q) || doc.doctorId?.toLowerCase().includes(q) || doc.specialization?.toLowerCase().includes(q) || doc.licenseNumber?.toLowerCase().includes(q);
+  });
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Doctor Management</h2>
-        <Button variant="primary" icon={<Plus size={16} />}>
-          Add Doctor
-        </Button>
+        <div>
+          <h2>Doctor Management</h2>
+          <p style={{ color: 'var(--color-neutral-500)', fontSize: '0.85rem' }}>
+            Manage clinical doctor profiles, license credentials, and weekly availability schedules.
+          </p>
+        </div>
+        {isAdmin && (
+          <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenCreateModal}>
+            Add Doctor Profile
+          </Button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <Input
+            placeholder="Search doctor by name, ID, license, or specialization..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            icon={<Search size={16} />}
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid var(--color-border)',
+            background: 'var(--color-surface)'
+          }}
+        >
+          <option value="">All Statuses</option>
+          <option value="active">Active Only</option>
+          <option value="inactive">Inactive Only</option>
+        </select>
       </div>
 
       <Card>
@@ -52,8 +219,8 @@ const DoctorList = () => {
             <div className={styles.loader}><Spinner /></div>
           ) : error ? (
             <div className={styles.error}>{error}</div>
-          ) : doctors.length === 0 ? (
-            <div className={styles.empty}>No doctors found.</div>
+          ) : filteredDoctors.length === 0 ? (
+            <div className={styles.empty}>No doctor profiles found.</div>
           ) : (
             <div className={styles.tableResponsive}>
               <table className={styles.table}>
@@ -62,19 +229,24 @@ const DoctorList = () => {
                     <th>Doctor ID</th>
                     <th>Name</th>
                     <th>Specialization</th>
-                    <th>License</th>
-                    <th>Fee</th>
+                    <th>License No.</th>
+                    <th>Fee (PKR)</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {doctors.map(doc => (
+                  {filteredDoctors.map(doc => (
                     <tr key={doc._id}>
-                      <td>{doc.doctorId}</td>
-                      <td>{doc.fullName}</td>
-                      <td>{doc.specialization}</td>
-                      <td>{doc.licenseNumber}</td>
+                      <td style={{ fontWeight: 600 }}>{doc.doctorId}</td>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{doc.fullName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-400)' }}>{doc.qualification}</div>
+                      </td>
+                      <td>
+                        <Badge variant="info">{doc.specialization}</Badge>
+                      </td>
+                      <td><code>{doc.licenseNumber}</code></td>
                       <td>Rs. {doc.consultationFee}</td>
                       <td>
                         <Badge variant={doc.status === 'active' ? 'success' : 'danger'}>
@@ -83,15 +255,26 @@ const DoctorList = () => {
                       </td>
                       <td>
                         <div className={styles.actions}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} title="Edit" />
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            icon={<Trash2 size={16} color="var(--danger)" />} 
-                            title="Deactivate"
-                            onClick={() => handleDelete(doc._id)}
-                            disabled={doc.status === 'inactive'}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Calendar size={16} color="var(--color-primary-600)" />}
+                            title="Schedule"
+                            onClick={() => handleOpenScheduleModal(doc)}
                           />
+                          {isAdmin && (
+                            <>
+                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} title="Edit" onClick={() => handleOpenEditModal(doc)} />
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                icon={<Trash2 size={16} color="var(--danger)" />} 
+                                title="Deactivate"
+                                onClick={() => handleDelete(doc._id)}
+                                disabled={doc.status === 'inactive'}
+                              />
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -102,6 +285,153 @@ const DoctorList = () => {
           )}
         </CardBody>
       </Card>
+
+      {/* Create / Edit Doctor Modal */}
+      {isModalOpen && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingDoctor ? 'Edit Doctor Profile' : 'Add New Doctor Profile'}
+        >
+          <form onSubmit={handleSubmitDoctor} style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '10px' }}>
+            <Input
+              label="Full Name (e.g. Dr. Ahmed Khan)"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="Specialization"
+                value={formData.specialization}
+                onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                required
+              />
+              <Input
+                label="Qualification"
+                value={formData.qualification}
+                onChange={(e) => setFormData({ ...formData, qualification: e.target.value })}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Input
+                label="PMDC / License Number"
+                value={formData.licenseNumber}
+                onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+                required
+                placeholder="PMDC-12345-P"
+              />
+              <Input
+                label="Consultation Fee (PKR)"
+                type="number"
+                value={formData.consultationFee}
+                onChange={(e) => setFormData({ ...formData, consultationFee: e.target.value })}
+                required
+              />
+            </div>
+
+            <Input
+              label="Email Address"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="doctor@subhancare.com"
+            />
+            <Input
+              label="Phone Number"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="0300-1234567"
+            />
+
+            {!editingDoctor && (
+              <Input
+                label="User Account Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Leave blank for default Password@123"
+                showPasswordToggle
+              />
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {isSubmitting ? <Spinner size="sm" /> : (editingDoctor ? 'Save Changes' : 'Create Profile')}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Schedule Modal */}
+      {isScheduleModalOpen && (
+        <Modal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          title={`Weekly Schedule — ${editingDoctor?.fullName || ''}`}
+        >
+          <form onSubmit={handleSaveSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '10px' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-neutral-500)' }}>
+              Configure working days, available time slots, and slot capacities (FR-02.2).
+            </p>
+            {scheduleData.map((item, index) => (
+              <div key={item.day} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', border: '1px solid var(--color-border)', borderRadius: '6px' }}>
+                <label style={{ width: '90px', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="checkbox"
+                    checked={item.isWorking}
+                    onChange={(e) => {
+                      const updated = [...scheduleData];
+                      updated[index].isWorking = e.target.checked;
+                      setScheduleData(updated);
+                    }}
+                  />
+                  {item.day}
+                </label>
+
+                {item.isWorking ? (
+                  <>
+                    <input
+                      type="time"
+                      value={item.startTime}
+                      onChange={(e) => {
+                        const updated = [...scheduleData];
+                        updated[index].startTime = e.target.value;
+                        setScheduleData(updated);
+                      }}
+                      style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                    />
+                    <span>to</span>
+                    <input
+                      type="time"
+                      value={item.endTime}
+                      onChange={(e) => {
+                        const updated = [...scheduleData];
+                        updated[index].endTime = e.target.value;
+                        setScheduleData(updated);
+                      }}
+                      style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                    />
+                  </>
+                ) : (
+                  <span style={{ color: 'var(--color-neutral-400)', fontSize: '0.85rem' }}>Day Off / Unavailable</span>
+                )}
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <Button type="button" variant="ghost" onClick={() => setIsScheduleModalOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {isSubmitting ? <Spinner size="sm" /> : 'Save Schedule'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
