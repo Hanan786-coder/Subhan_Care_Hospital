@@ -4,7 +4,7 @@ import axios from 'axios';
  * Axios instance configured for the API.
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   timeout: 15000,
 });
 
@@ -26,7 +26,14 @@ api.interceptors.request.use(
  * Response interceptor to handle 401 Unauthorized errors.
  */
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Sliding session update token if backend provided a new one
+    const newAuthToken = response.headers['x-auth-token'];
+    if (newAuthToken) {
+      localStorage.setItem('sc_hms_token', newAuthToken);
+    }
+    return response;
+  },
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('sc_hms_token');
