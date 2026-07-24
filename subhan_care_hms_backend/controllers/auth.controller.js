@@ -70,6 +70,8 @@ const loginUser = async (req, res) => {
   }
 };
 
+const crypto = require('crypto');
+
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -79,7 +81,98 @@ const getMe = async (req, res) => {
   }
 };
 
+/**
+ * Forgot Password - Generates reset token (valid for 15 mins per SR-11)
+ */
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'No user found with that email address' });
+    }
+
+    if (user.status === 'inactive') {
+      return res.status(403).json({ success: false, error: 'Account is inactive' });
+    }
+
+    // Generate unhashed reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Set expire: 15 minutes (SR-11)
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset token generated successfully. Valid for 15 minutes.',
+      resetToken // Return token for dev / verification workflow
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Reset Password - Uses reset token to set new password
+ */
+const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    if (!token || !password) {
+      return res.status(400).json({ success: false, error: 'Token and new password are required' });
+    }
+
+    // Hash token from request to compare with DB
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired password reset token' });
+    }
+
+    // Validate password complexity if needed (or basic length check if standard)
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters long' });
+    }
+
+    // Update password
+    user.passwordHash = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    user.failedAttempts = 0;
+    user.lockoutUntil = null;
+    if (user.status === 'locked') {
+      user.status = 'active';
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful. You can now log in with your new password.'
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   loginUser,
-  getMe
+  getMe,
+  forgotPassword,
+  resetPassword
 };

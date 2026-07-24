@@ -55,6 +55,12 @@ const userSchema = new mongoose.Schema({
   },
   lockoutUntil: {
     type: Date
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpire: {
+    type: Date
   }
 }, { timestamps: true });
 

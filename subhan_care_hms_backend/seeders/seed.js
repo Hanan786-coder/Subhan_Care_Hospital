@@ -19,35 +19,35 @@ const seedUsers = async () => {
       {
         userId: 'SC-USR-00001',
         name: 'Admin User',
-        email: 'admin@subhancare.com',
+        email: 'admin@gmail.com',
         passwordHash: 'admin123',
         role: 'ADMIN'
       },
       {
         userId: 'SC-USR-00002',
         name: 'Dr. Sarah Ahmed',
-        email: 'doctor@subhancare.com',
+        email: 'doctor@gmail.com',
         passwordHash: 'doctor123',
         role: 'DOCTOR'
       },
       {
         userId: 'SC-USR-00003',
         name: 'Receptionist Ali',
-        email: 'reception@subhancare.com',
+        email: 'reception@gmail.com',
         passwordHash: 'reception123',
         role: 'RECEPTIONIST'
       },
       {
         userId: 'SC-USR-00004',
         name: 'Pharmacist Bilal',
-        email: 'pharmacy@subhancare.com',
+        email: 'pharmacy@gmail.com',
         passwordHash: 'pharmacy123',
         role: 'PHARMACIST'
       },
       {
         userId: 'SC-USR-00005',
         name: 'Billing Staff Zara',
-        email: 'billing@subhancare.com',
+        email: 'billing@gmail.com',
         passwordHash: 'billing123',
         role: 'BILLING_STAFF'
       }

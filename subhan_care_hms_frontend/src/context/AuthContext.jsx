@@ -33,10 +33,10 @@ const parseJwt = (token) => {
  */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('sc_hms_user');
+    const savedUser = localStorage.getItem('sc_hms_user') || sessionStorage.getItem('sc_hms_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('sc_hms_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('sc_hms_token') || sessionStorage.getItem('sc_hms_token'));
   const [isAuthenticated, setIsAuthenticated] = useState(!!token);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,13 +47,14 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     localStorage.removeItem('sc_hms_token');
     localStorage.removeItem('sc_hms_user');
+    sessionStorage.removeItem('sc_hms_token');
+    sessionStorage.removeItem('sc_hms_user');
     window.location.href = '/login';
   }, []);
 
   // Validate token on mount
   useEffect(() => {
     if (token) {
-      // Allow the mock token used for frontend-only testing
       if (token === 'mock-jwt-token-12345') {
         setIsAuthenticated(true);
       } else {
@@ -68,11 +69,10 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false);
   }, [token, logout]);
 
-  // Session timeout setup (timeout minutes from env, fallback 30 mins)
-  const sessionTimeoutMinutes = parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '30', 10);
+  // Session timeout setup (timeout minutes from env, fallback 15 mins per SRS FR-10.3)
+  const sessionTimeoutMinutes = parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '15', 10);
   
   const handleTimeoutWarning = useCallback(() => {
-    // Show warning toast or alert
     if (isAuthenticated) {
       alert('Your session will expire in 1 minute due to inactivity.');
     }
@@ -90,10 +90,10 @@ export const AuthProvider = ({ children }) => {
    * Log in user
    * @param {string} email 
    * @param {string} password 
+   * @param {boolean} rememberMe 
    * @returns {Promise<void>}
    */
-  const login = async (email, password) => {
-    // Check if account is temporarily locked
+  const login = async (email, password, rememberMe = false) => {
     const lockoutUntil = parseInt(localStorage.getItem(LOCKOUT_UNTIL_KEY) || '0', 10);
     if (Date.now() < lockoutUntil) {
       const minutesLeft = Math.ceil((lockoutUntil - Date.now()) / 60000);
@@ -108,20 +108,24 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
       
-      localStorage.setItem('sc_hms_token', newToken);
-      localStorage.setItem('sc_hms_user', JSON.stringify(userData));
+      const storage = rememberMe ? localStorage : sessionStorage;
+      // Clear alternative storage
+      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      otherStorage.removeItem('sc_hms_token');
+      otherStorage.removeItem('sc_hms_user');
+
+      storage.setItem('sc_hms_token', newToken);
+      storage.setItem('sc_hms_user', JSON.stringify(userData));
       
-      // Reset failed attempts on success
       localStorage.removeItem(FAILED_ATTEMPTS_KEY);
       localStorage.removeItem(LOCKOUT_UNTIL_KEY);
     } catch (error) {
-      // Handle failed attempts tracking (FR-10.5)
       let attempts = parseInt(localStorage.getItem(FAILED_ATTEMPTS_KEY) || '0', 10);
       attempts += 1;
       localStorage.setItem(FAILED_ATTEMPTS_KEY, attempts.toString());
       
       if (attempts >= 5) {
-        const lockoutTime = Date.now() + 15 * 60 * 1000; // 15 minutes
+        const lockoutTime = Date.now() + 15 * 60 * 1000;
         localStorage.setItem(LOCKOUT_UNTIL_KEY, lockoutTime.toString());
         throw new Error('Too many failed attempts. Login blocked for 15 minutes.');
       }
