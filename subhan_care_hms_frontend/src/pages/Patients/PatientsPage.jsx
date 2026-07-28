@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getPatients, registerPatient, updatePatient, deactivatePatient } from '../../services/patientService';
 import { Card, CardHeader, CardBody, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
-import { Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Eye, Filter, UserCheck, HeartPulse, Activity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import styles from './Patients.module.css';
@@ -15,6 +15,7 @@ const PatientList = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [error, setError] = useState(null);
 
   // Modal states
@@ -48,7 +49,7 @@ const PatientList = () => {
       setPatients(data.data || []);
       setError(null);
     } catch (err) {
-      setError('Failed to load patients.');
+      setError('Failed to load patients list. Please ensure the backend server is running.');
     } finally {
       setLoading(false);
     }
@@ -85,9 +86,9 @@ const PatientList = () => {
       cnic: patient.cnic || '',
       contactNumber: patient.contactNumber || '',
       address: patient.address || '',
-      emergencyContact: patient.emergencyContact || '',
+      emergencyContact: typeof patient.emergencyContact === 'string' ? patient.emergencyContact : (patient.emergencyContact?.phone || ''),
       bloodGroup: patient.bloodGroup || 'O+',
-      allergies: patient.allergies || '',
+      allergies: Array.isArray(patient.allergies) ? patient.allergies.map(a => typeof a === 'string' ? a : a.name).join(', ') : (patient.allergies || ''),
       occupation: patient.occupation || ''
     });
     setIsModalOpen(true);
@@ -109,7 +110,7 @@ const PatientList = () => {
     try {
       if (editingPatient) {
         await updatePatient(editingPatient._id, formData);
-        toast.success('Patient record updated');
+        toast.success('Patient record updated successfully');
       } else {
         await registerPatient(formData);
         toast.success('Patient registered successfully (FR-01.1)');
@@ -124,7 +125,7 @@ const PatientList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to deactivate (soft-delete) this patient record? Historical data will be preserved for audit (FR-01.4).')) {
+    if (window.confirm('Are you sure you want to deactivate (soft-delete) this patient record? Historical data will be preserved for audit compliance.')) {
       try {
         await deactivatePatient(id);
         toast.success('Patient record soft-deleted');
@@ -135,13 +136,19 @@ const PatientList = () => {
     }
   };
 
+  const filteredPatients = patients.filter(patient => {
+    if (statusFilter === 'active') return patient.status === 'active';
+    if (statusFilter === 'inactive') return patient.status === 'inactive';
+    return true;
+  });
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div>
+        <div className={styles.headerTitle}>
           <h2>Patient Management</h2>
-          <p style={{ color: 'var(--color-neutral-500)', fontSize: '0.85rem' }}>
-            Register new patients, maintain demographic records, and soft-delete inactive profiles.
+          <p>
+            Register patients, manage medical demographics, and maintain audit-compliant records.
           </p>
         </div>
         {canEdit && (
@@ -153,24 +160,39 @@ const PatientList = () => {
 
       <Card>
         <CardHeader>
-          <form className={styles.searchForm} onSubmit={handleSearch}>
-            <input 
-              type="text" 
-              placeholder="Search by Patient ID, Name, CNIC, or Contact Number (FR-01.5)..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={styles.searchInput}
-            />
-            <Button type="submit" variant="secondary" icon={<Search size={16} />}>Search</Button>
-          </form>
+          <div className={styles.controlsRow} style={{ width: '100%' }}>
+            <form className={styles.searchForm} onSubmit={handleSearch} style={{ flex: 1 }}>
+              <div style={{ flex: 1 }}>
+                <Input 
+                  placeholder="Search by Patient ID, Name, CNIC, or Phone..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  icon={<Search size={16} />}
+                />
+              </div>
+              <Button type="submit" variant="secondary" icon={<Search size={16} />}>Search</Button>
+            </form>
+            <select 
+              className={styles.filterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
         </CardHeader>
         <CardBody>
           {loading ? (
-            <div className={styles.loader}><Spinner /></div>
+            <div className={styles.loader}><Spinner /><span>Loading patient records...</span></div>
           ) : error ? (
             <div className={styles.error}>{error}</div>
-          ) : patients.length === 0 ? (
-            <div className={styles.empty}>No patients found matching query.</div>
+          ) : filteredPatients.length === 0 ? (
+            <div className={styles.empty}>
+              <UserCheck size={32} color="var(--color-neutral-400)" />
+              <span>No patients found matching query.</span>
+            </div>
           ) : (
             <div className={styles.tableResponsive}>
               <table className={styles.table}>
@@ -181,22 +203,26 @@ const PatientList = () => {
                     <th>CNIC / B-Form</th>
                     <th>Gender & Age</th>
                     <th>Contact</th>
+                    <th>Blood Group</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {patients.map(patient => {
+                  {filteredPatients.map(patient => {
                     const age = patient.dateOfBirth 
                       ? Math.floor((new Date() - new Date(patient.dateOfBirth)) / (365.25 * 24 * 60 * 60 * 1000))
                       : 'N/A';
                     return (
                       <tr key={patient._id}>
-                        <td style={{ fontWeight: 600 }}>{patient.patientId}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--color-primary-700)' }}>{patient.patientId}</td>
                         <td style={{ fontWeight: 500 }}>{patient.fullName}</td>
-                        <td><code>{patient.cnic}</code></td>
+                        <td><code style={{ fontSize: '0.8rem', background: 'var(--color-surface-muted)', padding: '2px 6px', borderRadius: '4px' }}>{patient.cnic}</code></td>
                         <td>{patient.gender}, {age} yrs</td>
                         <td>{patient.contactNumber}</td>
+                        <td>
+                          <Badge variant="info">{patient.bloodGroup || 'Unknown'}</Badge>
+                        </td>
                         <td>
                           <Badge variant={patient.status === 'active' ? 'success' : 'danger'}>
                             {patient.status}
@@ -207,18 +233,18 @@ const PatientList = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              icon={<Eye size={16} color="var(--color-primary-600)" />} 
+                              icon={<Eye size={15} color="var(--color-primary-600)" />} 
                               title="View Details" 
                               onClick={() => handleOpenDetailModal(patient)}
                             />
                             {canEdit && (
-                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} title="Edit" onClick={() => handleOpenEditModal(patient)} />
+                              <Button variant="ghost" size="sm" icon={<Edit size={15} />} title="Edit" onClick={() => handleOpenEditModal(patient)} />
                             )}
                             {isAdmin && (
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                icon={<Trash2 size={16} color="var(--danger)" />} 
+                                icon={<Trash2 size={15} color="var(--color-danger-500)" />} 
                                 title="Deactivate (Soft-delete)"
                                 onClick={() => handleDelete(patient._id)}
                                 disabled={patient.status === 'inactive'}
@@ -241,7 +267,7 @@ const PatientList = () => {
         <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          title={editingPatient ? `Edit Patient — ${editingPatient.patientId}` : 'Register New Patient (FR-01.1)'}
+          title={editingPatient ? `Edit Patient — ${editingPatient.patientId}` : 'Register New Patient'}
         >
           <form onSubmit={handleSubmitPatient} style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '10px' }}>
             <Input
@@ -259,7 +285,7 @@ const PatientList = () => {
                 onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
                 required
                 placeholder="42101-1234567-1"
-                helper="Must be unique (FR-01.6)"
+                helper="Must be unique"
               />
               <Input
                 label="Date of Birth"
@@ -276,7 +302,7 @@ const PatientList = () => {
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border-soft)', background: 'var(--color-surface-card)', color: 'var(--color-neutral-900)' }}
                 >
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -288,7 +314,7 @@ const PatientList = () => {
                 <select
                   value={formData.bloodGroup}
                   onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border-soft)', background: 'var(--color-surface-card)', color: 'var(--color-neutral-900)' }}
                 >
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
@@ -347,25 +373,61 @@ const PatientList = () => {
         <Modal
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          title={`Patient Record — ${selectedPatient.patientId}`}
+          title={`Patient Profile — ${selectedPatient.patientId}`}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '10px' }}>
-            <div style={{ padding: '12px', borderRadius: '8px', background: 'var(--color-surface-soft)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div><strong>Full Name:</strong> {selectedPatient.fullName}</div>
-              <div><strong>CNIC:</strong> {selectedPatient.cnic}</div>
-              <div><strong>Gender:</strong> {selectedPatient.gender}</div>
-              <div><strong>Date of Birth:</strong> {new Date(selectedPatient.dateOfBirth).toLocaleDateString()}</div>
-              <div><strong>Blood Group:</strong> {selectedPatient.bloodGroup || 'N/A'}</div>
-              <div><strong>Contact:</strong> {selectedPatient.contactNumber}</div>
-              <div><strong>Emergency Contact:</strong> {selectedPatient.emergencyContact || 'N/A'}</div>
-              <div><strong>Status:</strong> {selectedPatient.status}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '10px' }}>
+            <div className={styles.detailGrid}>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Full Name</span>
+                <span className={styles.detailValue}>{selectedPatient.fullName}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>CNIC / B-Form</span>
+                <span className={styles.detailValue}>{selectedPatient.cnic}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Gender</span>
+                <span className={styles.detailValue}>{selectedPatient.gender}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Date of Birth</span>
+                <span className={styles.detailValue}>{new Date(selectedPatient.dateOfBirth).toLocaleDateString()}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Blood Group</span>
+                <span className={styles.detailValue}>{selectedPatient.bloodGroup || 'N/A'}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Contact</span>
+                <span className={styles.detailValue}>{selectedPatient.contactNumber}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Emergency Contact</span>
+                <span className={styles.detailValue}>
+                  {typeof selectedPatient.emergencyContact === 'string' ? selectedPatient.emergencyContact : (selectedPatient.emergencyContact?.phone || 'N/A')}
+                </span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Status</span>
+                <span className={styles.detailValue}>
+                  <Badge variant={selectedPatient.status === 'active' ? 'success' : 'danger'}>{selectedPatient.status}</Badge>
+                </span>
+              </div>
             </div>
 
-            <div><strong>Address:</strong> {selectedPatient.address || 'N/A'}</div>
-            <div><strong>Known Allergies:</strong> {selectedPatient.allergies || 'None recorded'}</div>
-            <div><strong>Registration Date:</strong> {new Date(selectedPatient.registrationDate || selectedPatient.createdAt).toLocaleString()}</div>
+            <div style={{ padding: '12px', background: 'var(--color-surface-muted)', borderRadius: '8px', fontSize: '0.875rem' }}>
+              <div style={{ marginBottom: '6px' }}><strong>Address:</strong> {selectedPatient.address || 'N/A'}</div>
+              <div style={{ marginBottom: '6px' }}>
+                <strong>Known Allergies:</strong> {
+                  Array.isArray(selectedPatient.allergies) && selectedPatient.allergies.length > 0 
+                    ? selectedPatient.allergies.map(a => typeof a === 'string' ? a : `${a.name} (${a.severity || 'Mild'})`).join(', ')
+                    : (selectedPatient.allergies || 'None recorded')
+                }
+              </div>
+              <div><strong>Registered On:</strong> {new Date(selectedPatient.registrationDate || selectedPatient.createdAt).toLocaleString()}</div>
+            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
               <Button variant="secondary" onClick={() => setIsDetailModalOpen(false)}>Close</Button>
             </div>
           </div>
