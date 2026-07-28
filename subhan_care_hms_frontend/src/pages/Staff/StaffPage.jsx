@@ -46,6 +46,10 @@ const StaffList = () => {
     }
   };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+  };
+
   const handleOpenCreateModal = () => {
     setEditingStaff(null);
     setFormData({
@@ -153,7 +157,7 @@ const StaffList = () => {
 
       <Card>
         <CardHeader>
-          <div className={styles.controlsRow} style={{ width: '100%' }}>
+          <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
             <div style={{ flex: 1 }}>
               <Input
                 placeholder="Search staff by name, ID, or role..."
@@ -162,6 +166,9 @@ const StaffList = () => {
                 icon={<Search size={16} />}
               />
             </div>
+            <Button type="submit" variant="secondary" icon={<Search size={16} />}>
+              Search
+            </Button>
             <select
               className={styles.filterSelect}
               value={statusFilter}
@@ -171,7 +178,7 @@ const StaffList = () => {
               <option value="active">Active Only</option>
               <option value="inactive">Inactive Only</option>
             </select>
-          </div>
+          </form>
         </CardHeader>
         <CardBody>
           {loading ? (
