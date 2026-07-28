@@ -512,7 +512,7 @@ const PatientList = () => {
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
-              justify-content: 'space-between'
+              justifyContent: 'space-between'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{ 
@@ -522,7 +522,7 @@ const PatientList = () => {
                   background: 'rgba(255, 255, 255, 0.2)', 
                   display: 'flex', 
                   alignItems: 'center', 
-                  justify-content: 'center',
+                  justifyContent: 'center',
                   fontSize: '1.4rem',
                   fontWeight: 700
                 }}>
