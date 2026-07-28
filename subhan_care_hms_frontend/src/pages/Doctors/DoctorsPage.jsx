@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getDoctors, createDoctor, updateDoctor, updateDoctorSchedule, deactivateDoctor } from '../../services/doctorService';
-import { Card, CardBody, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
-import { Plus, Edit, Trash2, Search, Calendar } from 'lucide-react';
+import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
+import { Plus, Edit, Trash2, Search, Calendar, UserCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import styles from '../Patients/Patients.module.css';
@@ -175,9 +175,9 @@ const DoctorList = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div>
+        <div className={styles.headerTitle}>
           <h2>Doctor Management</h2>
-          <p style={{ color: 'var(--color-neutral-500)', fontSize: '0.85rem' }}>
+          <p>
             Manage clinical doctor profiles, license credentials, and weekly availability schedules.
           </p>
         </div>
@@ -188,39 +188,38 @@ const DoctorList = () => {
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ flex: 1 }}>
-          <Input
-            placeholder="Search doctor by name, ID, license, or specialization..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            icon={<Search size={16} />}
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: '6px',
-            border: '1px solid var(--color-border)',
-            background: 'var(--color-surface)'
-          }}
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active Only</option>
-          <option value="inactive">Inactive Only</option>
-        </select>
-      </div>
-
       <Card>
+        <CardHeader>
+          <div className={styles.controlsRow} style={{ width: '100%' }}>
+            <div style={{ flex: 1 }}>
+              <Input
+                placeholder="Search doctor by name, ID, license, or specialization..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon={<Search size={16} />}
+              />
+            </div>
+            <select
+              className={styles.filterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
+        </CardHeader>
         <CardBody>
           {loading ? (
-            <div className={styles.loader}><Spinner /></div>
+            <div className={styles.loader}><Spinner /><span>Loading doctor profiles...</span></div>
           ) : error ? (
             <div className={styles.error}>{error}</div>
           ) : filteredDoctors.length === 0 ? (
-            <div className={styles.empty}>No doctor profiles found.</div>
+            <div className={styles.empty}>
+              <UserCheck size={32} color="var(--color-neutral-400)" />
+              <span>No doctor profiles found.</span>
+            </div>
           ) : (
             <div className={styles.tableResponsive}>
               <table className={styles.table}>
@@ -238,7 +237,7 @@ const DoctorList = () => {
                 <tbody>
                   {filteredDoctors.map(doc => (
                     <tr key={doc._id}>
-                      <td style={{ fontWeight: 600 }}>{doc.doctorId}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--color-primary-700)' }}>{doc.doctorId}</td>
                       <td>
                         <div style={{ fontWeight: 500 }}>{doc.fullName}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-400)' }}>{doc.qualification}</div>
@@ -246,8 +245,8 @@ const DoctorList = () => {
                       <td>
                         <Badge variant="info">{doc.specialization}</Badge>
                       </td>
-                      <td><code>{doc.licenseNumber}</code></td>
-                      <td>Rs. {doc.consultationFee}</td>
+                      <td><code style={{ fontSize: '0.8rem', background: 'var(--color-surface-muted)', padding: '2px 6px', borderRadius: '4px' }}>{doc.licenseNumber}</code></td>
+                      <td style={{ fontWeight: 600 }}>Rs. {doc.consultationFee}</td>
                       <td>
                         <Badge variant={doc.status === 'active' ? 'success' : 'danger'}>
                           {doc.status}
@@ -258,17 +257,17 @@ const DoctorList = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            icon={<Calendar size={16} color="var(--color-primary-600)" />}
+                            icon={<Calendar size={15} color="var(--color-primary-600)" />}
                             title="Schedule"
                             onClick={() => handleOpenScheduleModal(doc)}
                           />
                           {isAdmin && (
                             <>
-                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} title="Edit" onClick={() => handleOpenEditModal(doc)} />
+                              <Button variant="ghost" size="sm" icon={<Edit size={15} />} title="Edit" onClick={() => handleOpenEditModal(doc)} />
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                icon={<Trash2 size={16} color="var(--danger)" />} 
+                                icon={<Trash2 size={15} color="var(--color-danger-500)" />} 
                                 title="Deactivate"
                                 onClick={() => handleDelete(doc._id)}
                                 disabled={doc.status === 'inactive'}
@@ -375,12 +374,12 @@ const DoctorList = () => {
           title={`Weekly Schedule — ${editingDoctor?.fullName || ''}`}
         >
           <form onSubmit={handleSaveSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '10px' }}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--color-neutral-500)' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-neutral-600)' }}>
               Configure working days, available time slots, and slot capacities (FR-02.2).
             </p>
             {scheduleData.map((item, index) => (
-              <div key={item.day} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', border: '1px solid var(--color-border)', borderRadius: '6px' }}>
-                <label style={{ width: '90px', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div key={item.day} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', border: '1px solid var(--color-border-soft)', borderRadius: '8px', background: 'var(--color-surface-muted)' }}>
+                <label style={{ width: '100px', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="checkbox"
                     checked={item.isWorking}
@@ -394,7 +393,7 @@ const DoctorList = () => {
                 </label>
 
                 {item.isWorking ? (
-                  <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                       type="time"
                       value={item.startTime}
@@ -403,9 +402,9 @@ const DoctorList = () => {
                         updated[index].startTime = e.target.value;
                         setScheduleData(updated);
                       }}
-                      style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                      style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--color-border-soft)', background: 'var(--color-surface-card)', color: 'var(--color-neutral-900)' }}
                     />
-                    <span>to</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500)' }}>to</span>
                     <input
                       type="time"
                       value={item.endTime}
@@ -414,9 +413,9 @@ const DoctorList = () => {
                         updated[index].endTime = e.target.value;
                         setScheduleData(updated);
                       }}
-                      style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                      style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--color-border-soft)', background: 'var(--color-surface-card)', color: 'var(--color-neutral-900)' }}
                     />
-                  </>
+                  </div>
                 ) : (
                   <span style={{ color: 'var(--color-neutral-400)', fontSize: '0.85rem' }}>Day Off / Unavailable</span>
                 )}
