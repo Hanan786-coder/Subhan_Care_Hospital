@@ -7,6 +7,19 @@ const AuthContext = createContext();
 const FAILED_ATTEMPTS_KEY = 'sc_hms_failed_attempts';
 const LOCKOUT_UNTIL_KEY = 'sc_hms_lockout_until';
 
+const normalizeRole = (role) => {
+  if (typeof role !== 'string') return role;
+  return role.trim().toUpperCase();
+};
+
+const normalizeUser = (userData) => {
+  if (!userData || typeof userData !== 'object') return userData;
+  return {
+    ...userData,
+    role: normalizeRole(userData.role),
+  };
+};
+
 /**
  * Utility to decode JWT token without external libraries.
  * @param {string} token 
@@ -34,7 +47,7 @@ const parseJwt = (token) => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('sc_hms_user') || sessionStorage.getItem('sc_hms_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    return savedUser ? normalizeUser(JSON.parse(savedUser)) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('sc_hms_token') || sessionStorage.getItem('sc_hms_token'));
   const [isAuthenticated, setIsAuthenticated] = useState(!!token);
@@ -105,7 +118,8 @@ export const AuthProvider = ({ children }) => {
       
       const { token: newToken, user: userData } = data;
       setToken(newToken);
-      setUser(userData);
+      const normalizedUser = normalizeUser(userData);
+      setUser(normalizedUser);
       setIsAuthenticated(true);
       
       const storage = rememberMe ? localStorage : sessionStorage;
@@ -115,7 +129,7 @@ export const AuthProvider = ({ children }) => {
       otherStorage.removeItem('sc_hms_user');
 
       storage.setItem('sc_hms_token', newToken);
-      storage.setItem('sc_hms_user', JSON.stringify(userData));
+      storage.setItem('sc_hms_user', JSON.stringify(normalizedUser));
       
       localStorage.removeItem(FAILED_ATTEMPTS_KEY);
       localStorage.removeItem(LOCKOUT_UNTIL_KEY);
@@ -139,7 +153,7 @@ export const AuthProvider = ({ children }) => {
    */
   const switchRole = (newRole) => {
     if (!user) return;
-    const updatedUser = { ...user, role: newRole };
+    const updatedUser = { ...user, role: normalizeRole(newRole) };
     setUser(updatedUser);
     localStorage.setItem('sc_hms_user', JSON.stringify(updatedUser));
   };
@@ -151,8 +165,9 @@ export const AuthProvider = ({ children }) => {
     if (!token) return;
     try {
       const userData = await getCurrentUser();
-      setUser(userData);
-      localStorage.setItem('sc_hms_user', JSON.stringify(userData));
+      const normalizedUser = normalizeUser(userData);
+      setUser(normalizedUser);
+      localStorage.setItem('sc_hms_user', JSON.stringify(normalizedUser));
     } catch (error) {
       console.error('Failed to refresh user', error);
     }

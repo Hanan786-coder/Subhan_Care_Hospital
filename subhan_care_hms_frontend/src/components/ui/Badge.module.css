@@ -1,40 +1,57 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-0-5) var(--space-2);
-  font-size: var(--font-size-xs, 0.75rem);
-  font-weight: var(--font-weight-medium, 500);
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold, 600);
   border-radius: var(--radius-full, 9999px);
-  text-transform: capitalize;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-/* active/inactive/pending/scheduled/completed/cancelled */
-.status-active {
-  background-color: var(--color-success-100);
-  color: var(--color-success-700);
+/* Status & Variant Mapping */
+.status-active,
+.status-success,
+.variant-success {
+  background-color: rgba(16, 185, 129, 0.14);
+  color: var(--color-success-700, #047857);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-.status-inactive {
-  background-color: var(--color-neutral-100);
-  color: var(--color-neutral-700);
+.status-inactive,
+.status-danger,
+.variant-danger {
+  background-color: rgba(239, 68, 68, 0.14);
+  color: var(--color-danger-700, #b91c1c);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-.status-pending {
-  background-color: var(--color-warning-100);
-  color: var(--color-warning-700);
+.status-pending,
+.status-warning,
+.variant-warning {
+  background-color: rgba(245, 158, 11, 0.14);
+  color: var(--color-warning-700, #a16207);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
-.status-scheduled {
-  background-color: var(--color-info-100);
-  color: var(--color-info-700);
+.status-scheduled,
+.status-info,
+.variant-info {
+  background-color: rgba(8, 145, 178, 0.14);
+  color: var(--color-info-700, #0f766e);
+  border: 1px solid rgba(8, 145, 178, 0.25);
 }
 
-.status-completed {
-  background-color: var(--color-primary-100);
-  color: var(--color-primary-700);
+.status-completed,
+.variant-primary {
+  background-color: rgba(8, 145, 178, 0.14);
+  color: var(--color-primary-700, #0e7490);
+  border: 1px solid rgba(8, 145, 178, 0.25);
 }
 
 .status-cancelled {
-  background-color: var(--color-danger-100);
-  color: var(--color-danger-700);
+  background-color: rgba(239, 68, 68, 0.14);
+  color: var(--color-danger-700, #b91c1c);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }

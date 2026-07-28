@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PUBLIC_ROUTES } from '@/constants/routes';
-import { forgotPassword, verifyOtp, resetPassword } from '@/services/authService';
+import { forgotPassword, resetPassword } from '@/services/authService';
 import { Button, Input, Spinner } from '@/components/ui';
-import { FiMail, FiKey, FiLock, FiArrowLeft, FiCheckCircle, FiActivity } from 'react-icons/fi';
+import { Mail, Key, Lock, ArrowLeft, CheckCircle, HeartPulse } from 'lucide-react';
 import toast from 'react-hot-toast';
-import styles from '../Login/LoginPage.module.css'; // Reusing login layout styles
+import styles from '../Login/LoginPage.module.css';
 import fpStyles from './ForgotPasswordPage.module.css';
 
 const STEPS = {
@@ -77,20 +77,19 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className={styles.container}>
-      {/* Left Panel - Branding (Reused) */}
+      {/* Left Panel - Branding */}
       <div className={styles.brandPanel}>
         <div className={styles.brandContent}>
           <div className={styles.logo}>
             <div className={styles.logoIcon}>
-              <FiActivity size={32} />
+              <HeartPulse size={30} color="#ffffff" />
             </div>
-            <h1>Subhan Care HMS</h1>
+            <h1>Subhan Care</h1>
           </div>
           <p className={styles.tagline}>
             Secure password recovery. We ensure your account and patient data stay protected.
           </p>
         </div>
-        <div className={styles.brandDecoration}></div>
       </div>
 
       {/* Right Panel - Form */}
@@ -98,13 +97,13 @@ const ForgotPasswordPage = () => {
         <div className={styles.formContainer}>
           <div className={styles.mobileLogo}>
             <div className={styles.logoIcon}>
-              <FiActivity size={24} />
+              <HeartPulse size={24} color="#ffffff" />
             </div>
             <h2>Subhan Care</h2>
           </div>
 
           <Link to={PUBLIC_ROUTES.LOGIN} className={fpStyles.backLink}>
-            <FiArrowLeft /> Back to Login
+            <ArrowLeft size={16} /> Back to Login
           </Link>
 
           {/* STEP 1: EMAIL */}
@@ -122,7 +121,7 @@ const ForgotPasswordPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  icon={<FiMail />}
+                  icon={<Mail size={18} />}
                   disabled={isLoading}
                 />
                 <Button type="submit" variant="primary" fullWidth size="lg" disabled={isLoading}>
@@ -147,7 +146,7 @@ const ForgotPasswordPage = () => {
                   value={resetToken}
                   onChange={(e) => setResetToken(e.target.value)}
                   required
-                  icon={<FiKey />}
+                  icon={<Key size={18} />}
                   disabled={isLoading}
                 />
                 <Input
@@ -157,7 +156,7 @@ const ForgotPasswordPage = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  icon={<FiLock />}
+                  icon={<Lock size={18} />}
                   disabled={isLoading}
                   showPasswordToggle
                   helper="Must be at least 8 characters"
@@ -169,7 +168,7 @@ const ForgotPasswordPage = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  icon={<FiLock />}
+                  icon={<Lock size={18} />}
                   disabled={isLoading}
                   showPasswordToggle
                   error={newPassword && confirmPassword && newPassword !== confirmPassword ? "Passwords do not match" : null}
@@ -190,7 +189,7 @@ const ForgotPasswordPage = () => {
           {step === STEPS.SUCCESS && (
             <div className={fpStyles.successContent}>
               <div className={fpStyles.successIcon}>
-                <FiCheckCircle size={48} />
+                <CheckCircle size={48} color="var(--color-secondary-500)" />
               </div>
               <h2>Password Reset Successful</h2>
               <p>Your password has been updated. You can now use your new password to sign in.</p>
@@ -205,10 +204,6 @@ const ForgotPasswordPage = () => {
               </Button>
             </div>
           )}
-
-          <div className={styles.footer}>
-            <p>Secure Hospital Management System</p>
-          </div>
         </div>
       </div>
     </div>

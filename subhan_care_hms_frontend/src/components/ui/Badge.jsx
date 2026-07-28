@@ -3,14 +3,18 @@ import styles from './Badge.module.css';
 
 /**
  * Badge component
+ * Supports both 'status' (active, inactive, etc.) and 'variant' (success, danger, info, warning) props.
  */
 const Badge = memo(({ 
-  status = 'active', 
+  status, 
+  variant,
   children, 
   className = '', 
   ...props 
 }) => {
-  const statusClass = styles[`status-${status}`] || styles['status-active'];
+  // Support both variant and status props for backwards compatibility
+  const key = variant || status || 'active';
+  const statusClass = styles[`status-${key}`] || styles[`variant-${key}`] || styles['status-active'];
   
   return (
     <span className={`${styles.badge} ${statusClass} ${className}`.trim()} {...props}>

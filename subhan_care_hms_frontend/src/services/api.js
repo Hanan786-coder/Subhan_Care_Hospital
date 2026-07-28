@@ -8,12 +8,28 @@ const api = axios.create({
   timeout: 15000,
 });
 
+const getStoredToken = () => localStorage.getItem('sc_hms_token') || sessionStorage.getItem('sc_hms_token');
+
+const setStoredToken = (token) => {
+  if (localStorage.getItem('sc_hms_token')) {
+    localStorage.setItem('sc_hms_token', token);
+    return;
+  }
+
+  if (sessionStorage.getItem('sc_hms_token')) {
+    sessionStorage.setItem('sc_hms_token', token);
+    return;
+  }
+
+  localStorage.setItem('sc_hms_token', token);
+};
+
 /**
  * Request interceptor to attach Authorization token.
  */
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('sc_hms_token');
+    const token = getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,7 +46,7 @@ api.interceptors.response.use(
     // Sliding session update token if backend provided a new one
     const newAuthToken = response.headers['x-auth-token'];
     if (newAuthToken) {
-      localStorage.setItem('sc_hms_token', newAuthToken);
+      setStoredToken(newAuthToken);
     }
     return response;
   },
