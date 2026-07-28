@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getStaffList, createStaff, updateStaff, deactivateStaff } from '../../services/staffService';
-import { Card, CardBody, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
+import { Plus, Edit, Trash2, Search, UserCheck, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from '../Patients/Patients.module.css';
 
@@ -124,7 +124,7 @@ const StaffList = () => {
     if (window.confirm('Are you sure you want to deactivate this staff member? Active sessions will be invalidated.')) {
       try {
         await deactivateStaff(id);
-        toast.success('Staff deactivated');
+        toast.success('Staff member deactivated successfully');
         fetchStaff();
       } catch (err) {
         toast.error('Failed to deactivate staff.');
@@ -140,10 +140,10 @@ const StaffList = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div>
+        <div className={styles.headerTitle}>
           <h2>Staff Management</h2>
-          <p style={{ color: 'var(--color-neutral-500)', fontSize: '0.85rem' }}>
-            Provision and manage front-desk, pharmacy, and billing staff accounts.
+          <p>
+            Provision and manage front-desk, pharmacy, and billing staff accounts with role assignments.
           </p>
         </div>
         <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenCreateModal}>
@@ -151,39 +151,38 @@ const StaffList = () => {
         </Button>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <Input
-            placeholder="Search staff by name, ID, or role..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            icon={<Search size={16} />}
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            borderRadius: '6px',
-            border: '1px solid var(--color-border)',
-            background: 'var(--color-surface)'
-          }}
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active Only</option>
-          <option value="inactive">Inactive Only</option>
-        </select>
-      </div>
-
       <Card>
+        <CardHeader>
+          <div className={styles.controlsRow} style={{ width: '100%' }}>
+            <div style={{ flex: 1 }}>
+              <Input
+                placeholder="Search staff by name, ID, or role..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon={<Search size={16} />}
+              />
+            </div>
+            <select
+              className={styles.filterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
+        </CardHeader>
         <CardBody>
           {loading ? (
-            <div className={styles.loader}><Spinner /></div>
+            <div className={styles.loader}><Spinner /><span>Loading staff records...</span></div>
           ) : error ? (
             <div className={styles.error}>{error}</div>
           ) : filteredStaff.length === 0 ? (
-            <div className={styles.empty}>No staff members found matching criteria.</div>
+            <div className={styles.empty}>
+              <UserCheck size={32} color="var(--color-neutral-400)" />
+              <span>No staff members found matching criteria.</span>
+            </div>
           ) : (
             <div className={styles.tableResponsive}>
               <table className={styles.table}>
@@ -201,8 +200,8 @@ const StaffList = () => {
                 <tbody>
                   {filteredStaff.map(staff => (
                     <tr key={staff._id}>
-                      <td style={{ fontWeight: 600 }}>{staff.staffId}</td>
-                      <td>{staff.fullName}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--color-primary-700)' }}>{staff.staffId}</td>
+                      <td style={{ fontWeight: 500 }}>{staff.fullName}</td>
                       <td>
                         <Badge variant="info">{staff.role}</Badge>
                       </td>
@@ -210,7 +209,7 @@ const StaffList = () => {
                         <div style={{ fontSize: '0.85rem' }}>{staff.contactInfo?.email || staff.userId?.email || 'N/A'}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-neutral-400)' }}>{staff.contactInfo?.phone}</div>
                       </td>
-                      <td>{staff.shiftTiming?.start} - {staff.shiftTiming?.end}</td>
+                      <td>{staff.shiftTiming?.start || '08:00'} - {staff.shiftTiming?.end || '16:00'}</td>
                       <td>
                         <Badge variant={staff.status === 'active' ? 'success' : 'danger'}>
                           {staff.status}
@@ -218,11 +217,11 @@ const StaffList = () => {
                       </td>
                       <td>
                         <div className={styles.actions}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} title="Edit" onClick={() => handleOpenEditModal(staff)} />
+                          <Button variant="ghost" size="sm" icon={<Edit size={15} />} title="Edit" onClick={() => handleOpenEditModal(staff)} />
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            icon={<Trash2 size={16} color="var(--danger)" />} 
+                            icon={<Trash2 size={15} color="var(--color-danger-500)" />} 
                             title="Deactivate"
                             onClick={() => handleDelete(staff._id)}
                             disabled={staff.status === 'inactive'}
@@ -261,7 +260,7 @@ const StaffList = () => {
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border-soft)', background: 'var(--color-surface-card)', color: 'var(--color-neutral-900)' }}
               >
                 <option value="RECEPTIONIST">Receptionist</option>
                 <option value="PHARMACIST">Pharmacist</option>
