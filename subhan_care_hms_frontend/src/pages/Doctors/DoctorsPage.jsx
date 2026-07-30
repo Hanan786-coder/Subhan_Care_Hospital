@@ -73,6 +73,7 @@ const DoctorList = () => {
       licenseNumber: '',
       phone: '',
       email: '',
+      address: '',
       password: '',
       consultationFee: 1500
     });
@@ -88,6 +89,7 @@ const DoctorList = () => {
       licenseNumber: doc.licenseNumber || '',
       phone: doc.contactInfo?.phone || '',
       email: doc.contactInfo?.email || doc.userId?.email || '',
+      address: doc.contactInfo?.address || '',
       password: '',
       consultationFee: doc.consultationFee || 1500
     });
@@ -118,7 +120,8 @@ const DoctorList = () => {
         licenseNumber: formData.licenseNumber,
         contactInfo: {
           phone: formData.phone,
-          email: formData.email
+          email: formData.email,
+          address: formData.address
         },
         consultationFee: Number(formData.consultationFee),
         email: formData.email,
@@ -350,6 +353,12 @@ const DoctorList = () => {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="0300-1234567"
+            />
+            <Input
+              label="Clinic/Residential Address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="House #, Street, Area, City"
             />
 
             {!editingDoctor && (

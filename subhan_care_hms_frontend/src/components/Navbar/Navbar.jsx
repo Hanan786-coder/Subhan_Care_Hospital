@@ -34,6 +34,25 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   const currentRoleLabel = user?.role ? ROLE_LABELS[user.role] || user.role : 'Guest';
   const pageTitle = breadcrumbs.length ? breadcrumbs[breadcrumbs.length - 1] : 'Dashboard';
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedDate = currentTime.toLocaleDateString('en-US', { 
+    weekday: 'short', 
+    day: 'numeric', 
+    month: 'short' 
+  });
+  
+  const formattedTime = currentTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
   const handleRoleSelect = (roleKey) => {
     switchRole(roleKey);
     setIsRoleDropdownOpen(false);
@@ -53,6 +72,10 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
         <div className={styles.contextBlock}>
           <div className={styles.pageTitleRow}>
             <h1 className={styles.pageTitle}>{pageTitle}</h1>
+            <div className={styles.statusIndicator}>
+              <span className={styles.statusDot}></span>
+              <span className={styles.statusText}>System Live</span>
+            </div>
           </div>
           <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
             <ol className={styles.breadcrumbList}>
@@ -72,6 +95,11 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
       </div>
 
       <div className={styles.right}>
+        <div className={styles.dateTimeBlock}>
+          <span className={styles.navDate}>{formattedDate}</span>
+          <span className={styles.navTime}>{formattedTime}</span>
+        </div>
+
         <div className={styles.roleSwitcherContainer} ref={dropdownRef}>
           <button
             className={styles.rolePickerBtn}

@@ -45,10 +45,15 @@ const PatientList = () => {
     cnic: '',
     contactNumber: '',
     address: '',
-    emergencyContact: '',
+    emergencyContact: {
+      name: '',
+      phone: '',
+      relationship: ''
+    },
     bloodGroup: 'O+',
     allergies: '',
-    occupation: ''
+    occupation: '',
+    maritalStatus: 'Single'
   });
 
   useEffect(() => {
@@ -88,10 +93,15 @@ const PatientList = () => {
       cnic: '',
       contactNumber: '',
       address: '',
-      emergencyContact: '',
+      emergencyContact: {
+        name: '',
+        phone: '',
+        relationship: ''
+      },
       bloodGroup: 'O+',
       allergies: '',
-      occupation: ''
+      occupation: '',
+      maritalStatus: 'Single'
     });
     setIsModalOpen(true);
   };
@@ -105,10 +115,15 @@ const PatientList = () => {
       cnic: patient.cnic || '',
       contactNumber: patient.contactNumber || '',
       address: patient.address || '',
-      emergencyContact: typeof patient.emergencyContact === 'string' ? patient.emergencyContact : (patient.emergencyContact?.phone || ''),
+      emergencyContact: {
+        name: patient.emergencyContact?.name || '',
+        phone: patient.emergencyContact?.phone || '',
+        relationship: patient.emergencyContact?.relationship || ''
+      },
       bloodGroup: patient.bloodGroup || 'O+',
       allergies: Array.isArray(patient.allergies) ? patient.allergies.map(a => typeof a === 'string' ? a : a.name).join(', ') : (patient.allergies || ''),
-      occupation: patient.occupation || ''
+      occupation: patient.occupation || '',
+      maritalStatus: patient.maritalStatus || 'Single'
     });
     setIsModalOpen(true);
   };
@@ -464,11 +479,45 @@ const PatientList = () => {
                 required
                 placeholder="0300-9876543"
               />
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600 }}>Marital Status</label>
+                <select
+                  value={formData.maritalStatus}
+                  onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border-soft)', background: 'var(--color-surface-card)', color: 'var(--color-neutral-900)' }}
+                >
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ padding: '12px', border: '1px solid var(--color-border-soft)', borderRadius: '8px', background: 'var(--color-surface-muted)' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-primary-700)' }}>
+                Emergency Contact Details
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <Input
+                  label="Contact Name"
+                  value={formData.emergencyContact.name}
+                  onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, name: e.target.value } })}
+                  placeholder="e.g. Spouse / Parent Name"
+                />
+                <Input
+                  label="Relationship"
+                  value={formData.emergencyContact.relationship}
+                  onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, relationship: e.target.value } })}
+                  placeholder="e.g. Brother, Wife"
+                />
+              </div>
               <Input
-                label="Emergency Contact"
-                value={formData.emergencyContact}
-                onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
-                placeholder="0312-3456789 (Kin/Guardian)"
+                label="Contact Phone"
+                value={formData.emergencyContact.phone}
+                onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, phone: e.target.value } })}
+                placeholder="03xx-xxxxxxx"
               />
             </div>
 
@@ -477,6 +526,7 @@ const PatientList = () => {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="House #, Street, City"
+              required
             />
 
             <Input
@@ -559,13 +609,18 @@ const PatientList = () => {
                 <span className={styles.detailValue}>{selectedPatient.bloodGroup || 'Unknown'}</span>
               </div>
               <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Marital Status</span>
+                <span className={styles.detailValue}>{selectedPatient.maritalStatus || 'Single'}</span>
+              </div>
+              <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>Contact Phone</span>
                 <span className={styles.detailValue}>{selectedPatient.contactNumber}</span>
               </div>
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>Emergency Contact</span>
                 <span className={styles.detailValue}>
-                  {typeof selectedPatient.emergencyContact === 'string' ? selectedPatient.emergencyContact : (selectedPatient.emergencyContact?.phone || 'N/A')}
+                  {selectedPatient.emergencyContact?.name || 'N/A'} {selectedPatient.emergencyContact?.relationship ? `(${selectedPatient.emergencyContact.relationship})` : ''}
+                  <div style={{ fontSize: '0.8rem', color: 'var(--color-neutral-500)' }}>{selectedPatient.emergencyContact?.phone || 'No phone'}</div>
                 </span>
               </div>
               <div className={styles.detailItem}>

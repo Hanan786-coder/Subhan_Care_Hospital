@@ -51,6 +51,67 @@
   text-overflow: ellipsis;
 }
 
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  padding: 4px 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--radius-full);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-success-500);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.statusText {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-success-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.dateTimeBlock {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-right: 12px;
+  padding-right: 12px;
+  border-right: 1px solid var(--color-border-soft);
+}
+
+@media (min-width: 1024px) {
+  .dateTimeBlock {
+    display: flex;
+  }
+}
+
+.navDate {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-neutral-600);
+  line-height: 1.2;
+}
+
+.navTime {
+  font-size: 10px;
+  color: var(--color-neutral-400);
+  line-height: 1.2;
+}
+
 .breadcrumbs { display: none; }
 @media (min-width: 768px) { .breadcrumbs { display: block; } }
 
