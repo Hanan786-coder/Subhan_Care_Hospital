@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getStaffList, createStaff, updateStaff, deactivateStaff } from '../../services/staffService';
 import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
 import { Plus, Edit, Trash2, Search, UserCheck, Shield } from 'lucide-react';
+import useDebounce from '../../hooks/useDebounce';
 import toast from 'react-hot-toast';
 import styles from '../Patients/Patients.module.css';
 
@@ -10,6 +11,7 @@ const StaffList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState('');
 
   // Modal states
@@ -44,10 +46,6 @@ const StaffList = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
   };
 
   const handleOpenCreateModal = () => {
@@ -137,7 +135,7 @@ const StaffList = () => {
   };
 
   const filteredStaff = staffList.filter(s => {
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     return !q || s.fullName?.toLowerCase().includes(q) || s.staffId?.toLowerCase().includes(q) || s.role?.toLowerCase().includes(q);
   });
 
@@ -157,7 +155,7 @@ const StaffList = () => {
 
       <Card>
         <CardHeader>
-          <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
+          <div className={styles.searchForm}>
             <div style={{ flex: 1 }}>
               <Input
                 placeholder="Search staff by name, ID, or role..."
@@ -166,9 +164,6 @@ const StaffList = () => {
                 icon={<Search size={16} />}
               />
             </div>
-            <Button type="submit" variant="secondary" icon={<Search size={16} />}>
-              Search
-            </Button>
             <select
               className={styles.filterSelect}
               value={statusFilter}
@@ -178,7 +173,7 @@ const StaffList = () => {
               <option value="active">Active Only</option>
               <option value="inactive">Inactive Only</option>
             </select>
-          </form>
+          </div>
         </CardHeader>
         <CardBody>
           {loading ? (

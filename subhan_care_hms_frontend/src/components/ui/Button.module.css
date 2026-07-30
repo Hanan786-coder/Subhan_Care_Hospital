@@ -65,15 +65,25 @@
 }
 
 .variant-outline {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--color-neutral-0);
   border-color: var(--color-neutral-200);
   color: var(--color-neutral-700);
   box-shadow: none;
+}
+:root[data-theme='dark'] .variant-outline {
+  background-color: transparent;
+  border-color: var(--color-neutral-600);
+  color: var(--color-neutral-300);
 }
 .variant-outline:hover:not(:disabled) {
   background-color: var(--color-neutral-50);
   border-color: var(--color-primary-200);
   color: var(--color-neutral-900);
+}
+:root[data-theme='dark'] .variant-outline:hover:not(:disabled) {
+  background-color: var(--color-neutral-100);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-strong);
 }
 
 .variant-ghost {
@@ -81,9 +91,16 @@
   color: var(--color-neutral-700);
   box-shadow: none;
 }
+:root[data-theme='dark'] .variant-ghost {
+  color: var(--color-neutral-400);
+}
 .variant-ghost:hover:not(:disabled) {
   background-color: rgba(8, 145, 178, 0.08);
   color: var(--color-neutral-900);
+}
+:root[data-theme='dark'] .variant-ghost:hover:not(:disabled) {
+  background-color: rgba(8, 145, 178, 0.2);
+  color: var(--color-text-strong);
 }
 
 .variant-danger {

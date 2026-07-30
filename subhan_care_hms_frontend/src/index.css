@@ -152,6 +152,11 @@ textarea:focus-visible,
   color: var(--color-neutral-900);
 }
 
+:root[data-theme='dark'] ::selection {
+  background: rgba(8, 145, 178, 0.4);
+  color: var(--color-text-strong);
+}
+
 input,
 textarea,
 select,

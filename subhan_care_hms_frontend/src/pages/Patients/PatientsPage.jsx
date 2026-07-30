@@ -8,6 +8,7 @@ import {
   Phone, Shield, MapPin, Activity, Stethoscope, Mail
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import useDebounce from '../../hooks/useDebounce';
 import toast from 'react-hot-toast';
 import styles from './Patients.module.css';
 
@@ -23,6 +24,7 @@ const PatientList = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [bloodGroupFilter, setBloodGroupFilter] = useState('all');
@@ -57,8 +59,8 @@ const PatientList = () => {
   });
 
   useEffect(() => {
-    fetchPatients();
-  }, []);
+    fetchPatients(debouncedSearch);
+  }, [debouncedSearch]);
 
   const fetchPatients = async (search = '') => {
     setLoading(true);
@@ -66,6 +68,7 @@ const PatientList = () => {
       const data = await getPatients(search);
       setPatients(data.data || []);
       setError(null);
+      setCurrentPage(1);
     } catch (err) {
       setError('Failed to load patient records. Please ensure backend server is online.');
     } finally {
@@ -73,15 +76,8 @@ const PatientList = () => {
     }
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchPatients(searchTerm);
-  };
-
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1);
   };
 
   const handleOpenCreateModal = () => {
@@ -155,7 +151,7 @@ const PatientList = () => {
         toast.success('Patient registered successfully (FR-01.1)');
       }
       setIsModalOpen(false);
-      fetchPatients(searchTerm);
+      fetchPatients(debouncedSearch);
     } catch (err) {
       toast.error(err.response?.data?.error || err.message || 'Failed to save patient');
     } finally {
@@ -171,7 +167,7 @@ const PatientList = () => {
       toast.success(`Patient ${patientToDelete.patientId} soft-deleted successfully`);
       setIsDeleteModalOpen(false);
       setPatientToDelete(null);
-      fetchPatients(searchTerm);
+      fetchPatients(debouncedSearch);
     } catch (err) {
       toast.error('Failed to deactivate patient record.');
     } finally {
@@ -185,18 +181,11 @@ const PatientList = () => {
 
   // Client-side filtering & pagination
   const filteredPatients = patients.filter(patient => {
-    const matchesSearch = !searchTerm || (
-      patient.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.cnic?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.contactNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     const matchesStatus = statusFilter === 'all' || patient.status === statusFilter;
     const matchesGender = genderFilter === 'all' || patient.gender === genderFilter;
     const matchesBlood = bloodGroupFilter === 'all' || patient.bloodGroup === bloodGroupFilter;
 
-    return matchesSearch && matchesStatus && matchesGender && matchesBlood;
+    return matchesStatus && matchesGender && matchesBlood;
   });
 
   const totalPages = Math.ceil(filteredPatients.length / ITEMS_PER_PAGE) || 1;
@@ -227,19 +216,179 @@ const PatientList = () => {
         <CardHeader>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
             {/* Search Bar */}
-            <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
-              <div style={{ flex: 1 }}>
-                <Input 
-                  placeholder="Search by Patient ID, Name, CNIC, or Contact..." 
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  icon={<Search size={16} />}
-                />
+            <div className={styles.searchForm}>
+              <Input 
+                placeholder="Search by Patient ID, Name, CNIC, or Contact..." 
+                value={searchTerm}
+                onChange={handleSearchChange}
+                icon={<Search size={16} />}
+              />
+            </div>
+
+            {/* Filter Bar */}
+            <div className={styles.controlsRow}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-neutral-600)' }}>
+                <Filter size={15} /> Filters:
               </div>
-              <Button type="submit" variant="secondary" icon={<Search size={16} />}>
-                Search
-              </Button>
-            </form>
+              <select 
+                className={styles.filterSelect}
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
+
+              <select 
+                className={styles.filterSelect}
+                value={genderFilter}
+                onChange={(e) => { setGenderFilter(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="all">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <select 
+                className={styles.filterSelect}
+                value={bloodGroupFilter}
+                onChange={(e) => { setBloodGroupFilter(e.target.value); setCurrentPage(1); }}
+              >
+                <option value="all">All Blood Groups</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardBody>
+          {loading ? (
+            <div className={styles.loader}><Spinner /><span>Loading patient records...</span></div>
+          ) : error ? (
+            <div className={styles.error}>{error}</div>
+          ) : paginatedPatients.length === 0 ? (
+            <div className={styles.empty}>
+              <UserCheck size={36} color="var(--color-neutral-400)" />
+              <span>No patients found matching query.</span>
+            </div>
+          ) : (
+            <div className={styles.tableResponsive}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>CNIC / B-Form</th>
+                    <th>Gender & Age</th>
+                    <th>Contact</th>
+                    <th>Blood Group</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedPatients.map(patient => {
+                    const age = patient.dateOfBirth 
+                      ? Math.floor((new Date() - new Date(patient.dateOfBirth)) / (365.25 * 24 * 60 * 60 * 1000))
+                      : 'N/A';
+                    return (
+                      <tr key={patient._id}>
+                        <td style={{ fontWeight: 600, color: 'var(--color-primary-700)' }}>{patient.patientId}</td>
+                        <td style={{ fontWeight: 500 }}>{patient.fullName}</td>
+                        <td><code style={{ fontSize: '0.8rem', background: 'var(--color-surface-muted)', padding: '2px 6px', borderRadius: '4px' }}>{patient.cnic}</code></td>
+                        <td>{patient.gender}, {age} yrs</td>
+                        <td>{patient.contactNumber}</td>
+                        <td>
+                          <Badge variant="info">{patient.bloodGroup || 'Unknown'}</Badge>
+                        </td>
+                        <td>
+                          <Badge variant={patient.status === 'active' ? 'success' : 'danger'}>
+                            {patient.status}
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className={styles.actions}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              icon={<Eye size={15} color="var(--color-primary-600)" />} 
+                              title="View Profile Card & Details" 
+                              onClick={() => handleOpenDetailModal(patient)}
+                            />
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              icon={<FileText size={15} color="var(--color-secondary-600)" />} 
+                              title="View Medical History" 
+                              onClick={() => handleNavigateMedicalHistory(patient.patientId)}
+                            />
+                            {canEdit && (
+                              <Button variant="ghost" size="sm" icon={<Edit size={15} />} title="Edit Patient" onClick={() => handleOpenEditModal(patient)} />
+                            )}
+                            {isAdmin && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                icon={<Trash2 size={15} color="var(--color-danger-500)" />} 
+                                title="Deactivate (Soft-delete)"
+                                onClick={() => handleOpenDeleteModal(patient)}
+                                disabled={patient.status === 'inactive'}
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardBody>
+
+        {/* Pagination Bar */}
+        {!loading && filteredPatients.length > 0 && (
+          <CardFooter>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span style={{ fontSize: '0.825rem', color: 'var(--color-neutral-600)' }}>
+                Showing <strong>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to <strong>{Math.min(currentPage * ITEMS_PER_PAGE, filteredPatients.length)}</strong> of <strong>{filteredPatients.length}</strong> patients
+              </span>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  icon={<ChevronLeft size={16} />}
+                >
+                  Previous
+                </Button>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, padding: '0 8px', color: 'var(--color-neutral-800)' }}>
+                  {currentPage} / {totalPages}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next <ChevronRight size={16} />
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
+...
 
             {/* Filter Bar */}
             <div className={styles.controlsRow}>
