@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getStaffList, createStaff, updateStaff, deactivateStaff } from '../../services/staffService';
-import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal, PasswordValidator, isPasswordValid } from '../../components/ui';
 import { 
   Plus, Edit, Trash2, Search, UserCheck, Shield, Clock, 
   Phone, Mail, MapPin, Users, AlertTriangle, Eye, Check, XCircle, RotateCcw
@@ -143,6 +143,10 @@ const StaffPage = () => {
     e.preventDefault();
     if (!formData.fullName.trim()) {
       toast.error('Full Name is required');
+      return;
+    }
+    if (formData.password && !isPasswordValid(formData.password)) {
+      toast.error('Password does not meet complexity requirements');
       return;
     }
 
@@ -507,14 +511,17 @@ const StaffPage = () => {
             />
 
             {!editingStaff && (
-              <Input
-                label="Account Password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Default: Password@123 if left blank"
-                showPasswordToggle
-              />
+              <>
+                <Input
+                  label="Account Password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Default: Password@123 if left blank"
+                  showPasswordToggle
+                />
+                {formData.password && <PasswordValidator password={formData.password} />}
+              </>
             )}
 
             {/* Shift & Working Hours */}

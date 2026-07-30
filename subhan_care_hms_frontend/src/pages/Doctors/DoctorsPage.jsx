@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getDoctors, createDoctor, updateDoctor, updateDoctorSchedule, deactivateDoctor } from '../../services/doctorService';
-import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal, PasswordValidator, isPasswordValid } from '../../components/ui';
 import { Plus, Edit, Trash2, Search, Calendar, UserCheck, Stethoscope, Clock, ShieldAlert, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import useDebounce from '../../hooks/useDebounce';
@@ -200,6 +200,10 @@ const DoctorsPage = () => {
     e.preventDefault();
     if (!formData.fullName || !formData.licenseNumber || !formData.specialization) {
       toast.error('Doctor Name, License Number, and Specialization are required.');
+      return;
+    }
+    if (formData.password && !isPasswordValid(formData.password)) {
+      toast.error('Password does not meet complexity requirements');
       return;
     }
 
@@ -642,14 +646,17 @@ const DoctorsPage = () => {
             </div>
 
             {!editingDoctor && (
-              <Input
-                label="User Login Password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Leave blank for default: Password@123"
-                showPasswordToggle
-              />
+              <>
+                <Input
+                  label="User Login Password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Leave blank for default: Password@123"
+                  showPasswordToggle
+                />
+                {formData.password && <PasswordValidator password={formData.password} />}
+              </>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PUBLIC_ROUTES } from '@/constants/routes';
 import { forgotPassword, verifyOtp, resetPassword } from '@/services/authService';
-import { Button, Input, Spinner } from '@/components/ui';
+import { Button, Input, Spinner, PasswordValidator, isPasswordValid } from '@/components/ui';
 import { Mail, Key, Lock, ArrowLeft, CheckCircle, HeartPulse, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from '../Login/LoginPage.module.css';
@@ -35,8 +35,6 @@ const ForgotPasswordPage = () => {
       setIsLoading(true);
       const res = await forgotPassword(email);
       if (res.resetToken) {
-        // Developer/test flow auto-fill
-        setOtpCode(res.resetToken);
         toast.success('Reset OTP generated! Check your email or console.');
       } else {
         toast.success(res.message || 'Verification OTP sent to your email.');
@@ -72,8 +70,8 @@ const ForgotPasswordPage = () => {
   // Step 3: Reset Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters long');
+    if (!newPassword || !isPasswordValid(newPassword)) {
+      toast.error('Password does not meet the complexity requirements');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -199,8 +197,8 @@ const ForgotPasswordPage = () => {
                   icon={<Lock size={18} />}
                   disabled={isLoading}
                   showPasswordToggle
-                  helper="Must be at least 8 characters"
                 />
+                <PasswordValidator password={newPassword} />
                 <Input
                   label="Confirm Password"
                   type="password"
