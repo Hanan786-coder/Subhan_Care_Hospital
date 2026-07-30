@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPatients, registerPatient, updatePatient, deactivatePatient } from '../../services/patientService';
 import { Card, CardHeader, CardBody, CardFooter, Button, Badge, Spinner, Input, Modal } from '../../components/ui';
-import { 
+import {
   Plus, Edit, Trash2, Search, Eye, Filter, UserCheck, HeartPulse, 
   FileText, ChevronLeft, ChevronRight, AlertTriangle, User, Calendar, 
   Phone, Shield, MapPin, Activity, Stethoscope, Mail
