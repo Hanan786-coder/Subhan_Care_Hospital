@@ -235,9 +235,43 @@ const resetPassword = async (req, res) => {
   }
 };
 
+/**
+ * Verify OTP - Confirms if the OTP is valid and not expired
+ */
+const verifyOTP = async (req, res) => {
+  const { token, otp } = req.body;
+  const receivedToken = token || otp;
+
+  try {
+    if (!receivedToken) {
+      return res.status(400).json({ success: false, error: 'OTP code is required' });
+    }
+
+    const resetPasswordToken = crypto.createHash('sha256').update(receivedToken.trim()).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP code' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully.'
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   loginUser,
   getMe,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyOTP
 };

@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PUBLIC_ROUTES } from '@/constants/routes';
-import { forgotPassword, resetPassword } from '@/services/authService';
+import { forgotPassword, verifyOtp, resetPassword } from '@/services/authService';
 import { Button, Input, Spinner } from '@/components/ui';
-import { Mail, Key, Lock, ArrowLeft, CheckCircle, HeartPulse } from 'lucide-react';
+import { Mail, Key, Lock, ArrowLeft, CheckCircle, HeartPulse, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from '../Login/LoginPage.module.css';
 import fpStyles from './ForgotPasswordPage.module.css';
 
 const STEPS = {
   EMAIL: 1,
-  RESET: 2,
-  SUCCESS: 3
+  OTP: 2,
+  RESET: 3,
+  SUCCESS: 4
 };
 
 const ForgotPasswordPage = () => {
@@ -21,39 +22,56 @@ const ForgotPasswordPage = () => {
 
   // Form State
   const [email, setEmail] = useState('');
-  const [resetToken, setResetToken] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Step 1: Request Reset Token
+  // Step 1: Request Reset Token (OTP)
   const handleRequestToken = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!email) return;
 
     try {
       setIsLoading(true);
       const res = await forgotPassword(email);
       if (res.resetToken) {
-        setResetToken(res.resetToken);
-        toast.success('Reset token generated! Valid for 15 minutes.');
+        // Developer/test flow auto-fill
+        setOtpCode(res.resetToken);
+        toast.success('Reset OTP generated! Check your email or console.');
       } else {
-        toast.success(res.message || 'Reset token sent to your email.');
+        toast.success(res.message || 'Verification OTP sent to your email.');
       }
-      setStep(STEPS.RESET);
+      setStep(STEPS.OTP);
     } catch (error) {
-      toast.error(error.response?.data?.error || error.message || 'Failed to request reset token');
+      toast.error(error.response?.data?.error || error.message || 'Failed to request reset OTP');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 2: Reset Password
-  const handleResetPassword = async (e) => {
+  // Step 2: Verify OTP Code
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    if (!resetToken) {
-      toast.error('Please enter the reset token');
+    if (!otpCode) {
+      toast.error('Please enter the OTP code');
       return;
     }
+
+    try {
+      setIsLoading(true);
+      await verifyOtp(email, otpCode);
+      toast.success('OTP verified successfully!');
+      setStep(STEPS.RESET);
+    } catch (error) {
+      toast.error(error.response?.data?.error || error.message || 'Invalid or expired OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Step 3: Reset Password
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
     if (!newPassword || newPassword.length < 8) {
       toast.error('Password must be at least 8 characters long');
       return;
@@ -65,7 +83,7 @@ const ForgotPasswordPage = () => {
 
     try {
       setIsLoading(true);
-      await resetPassword({ token: resetToken, password: newPassword });
+      await resetPassword({ token: otpCode, password: newPassword });
       setStep(STEPS.SUCCESS);
       toast.success('Password successfully reset!');
     } catch (error) {
@@ -102,16 +120,18 @@ const ForgotPasswordPage = () => {
             <h2>Subhan Care</h2>
           </div>
 
-          <Link to={PUBLIC_ROUTES.LOGIN} className={fpStyles.backLink}>
-            <ArrowLeft size={16} /> Back to Login
-          </Link>
+          {step !== STEPS.SUCCESS && (
+            <Link to={PUBLIC_ROUTES.LOGIN} className={fpStyles.backLink}>
+              <ArrowLeft size={16} /> Back to Login
+            </Link>
+          )}
 
           {/* STEP 1: EMAIL */}
           {step === STEPS.EMAIL && (
             <div className={fpStyles.stepContent}>
               <div className={styles.header}>
                 <h2>Forgot Password</h2>
-                <p>Enter your email to generate a password reset token</p>
+                <p>Enter your email to generate a secure password reset OTP</p>
               </div>
               <form onSubmit={handleRequestToken} className={styles.form}>
                 <Input
@@ -125,30 +145,50 @@ const ForgotPasswordPage = () => {
                   disabled={isLoading}
                 />
                 <Button type="submit" variant="primary" fullWidth size="lg" disabled={isLoading}>
-                  {isLoading ? <Spinner size="sm" color="currentColor" /> : 'Generate Reset Token'}
+                  {isLoading ? <Spinner size="sm" color="currentColor" /> : 'Generate Reset OTP'}
                 </Button>
               </form>
             </div>
           )}
 
-          {/* STEP 2: RESET */}
+          {/* STEP 2: OTP VERIFICATION */}
+          {step === STEPS.OTP && (
+            <div className={fpStyles.stepContent}>
+              <div className={styles.header}>
+                <h2>Verify OTP</h2>
+                <p>Enter the 6-digit OTP code sent to your email</p>
+              </div>
+              <form onSubmit={handleVerifyOtp} className={styles.form}>
+                <Input
+                  label="Verification OTP"
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  required
+                  icon={<ShieldCheck size={18} />}
+                  disabled={isLoading}
+                />
+                <Button type="submit" variant="primary" fullWidth size="lg" disabled={isLoading}>
+                  {isLoading ? <Spinner size="sm" color="currentColor" /> : 'Verify OTP'}
+                </Button>
+                <div className={fpStyles.resendWrapper}>
+                  <button type="button" className={fpStyles.resendBtn} onClick={handleRequestToken} disabled={isLoading}>
+                    Didn't receive OTP? Resend code
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* STEP 3: RESET PASSWORD */}
           {step === STEPS.RESET && (
             <div className={fpStyles.stepContent}>
               <div className={styles.header}>
-                <h2>Reset Password</h2>
-                <p>Enter your reset token and new password</p>
+                <h2>New Password</h2>
+                <p>Enter your new secure password</p>
               </div>
               <form onSubmit={handleResetPassword} className={styles.form}>
-                <Input
-                  label="Reset Token"
-                  type="text"
-                  placeholder="Enter reset token"
-                  value={resetToken}
-                  onChange={(e) => setResetToken(e.target.value)}
-                  required
-                  icon={<Key size={18} />}
-                  disabled={isLoading}
-                />
                 <Input
                   label="New Password"
                   type="password"
@@ -176,16 +216,11 @@ const ForgotPasswordPage = () => {
                 <Button type="submit" variant="primary" fullWidth size="lg" disabled={isLoading}>
                   {isLoading ? <Spinner size="sm" color="currentColor" /> : 'Reset Password'}
                 </Button>
-                <div className={fpStyles.resendWrapper}>
-                  <button type="button" className={fpStyles.resendBtn} onClick={handleRequestToken} disabled={isLoading}>
-                    Need a new reset token? Generate again
-                  </button>
-                </div>
               </form>
             </div>
           )}
 
-          {/* STEP 3: SUCCESS */}
+          {/* STEP 4: SUCCESS */}
           {step === STEPS.SUCCESS && (
             <div className={fpStyles.successContent}>
               <div className={fpStyles.successIcon}>
