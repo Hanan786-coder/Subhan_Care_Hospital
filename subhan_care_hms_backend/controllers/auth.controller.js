@@ -71,6 +71,54 @@ const loginUser = async (req, res) => {
 };
 
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Helper to send email using SMTP or fallback to simulated file logging
+ */
+const sendEmail = async ({ to, subject, text, html }) => {
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT || 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host,
+        port: parseInt(port, 10),
+        secure: port == 465,
+        auth: { user, pass }
+      });
+      await transporter.sendMail({
+        from: `"Subhan Care HMS" <${user}>`,
+        to,
+        subject,
+        text,
+        html
+      });
+      console.log(`Email successfully sent to ${to} via SMTP`);
+      return;
+    } catch (smtpError) {
+      console.error('SMTP sending failed, falling back to local file logging:', smtpError);
+    }
+  }
+
+  // Fallback: Write email to a local directory "sent_emails" and log to console
+  const emailsDir = path.join(__dirname, '..', 'sent_emails');
+  if (!fs.existsSync(emailsDir)) {
+    fs.mkdirSync(emailsDir, { recursive: true });
+  }
+
+  const fileName = `${to.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.txt`;
+  const filePath = path.join(emailsDir, fileName);
+  const content = `To: ${to}\nSubject: ${subject}\nDate: ${new Date().toISOString()}\n\nText Content:\n${text}\n\nHTML Content:\n${html}`;
+  
+  fs.writeFileSync(filePath, content, 'utf8');
+  console.log(`[SIMULATED EMAIL] Reset OTP sent to ${to}. Saved to ${filePath}`);
+};
 
 const getMe = async (req, res) => {
   try {
@@ -82,7 +130,7 @@ const getMe = async (req, res) => {
 };
 
 /**
- * Forgot Password - Generates reset token (valid for 15 mins per SR-11)
+ * Forgot Password - Generates 6-digit numeric OTP (valid for 15 mins per SR-11)
  */
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -98,8 +146,8 @@ const forgotPassword = async (req, res) => {
       return res.status(403).json({ success: false, error: 'Account is inactive' });
     }
 
-    // Generate unhashed reset token
-    const resetToken = crypto.randomBytes(20).toString('hex');
+    // Generate a 6-digit numeric OTP for user convenience
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Hash token and set to resetPasswordToken field
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -109,9 +157,26 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
+    // Send email
+    const subject = 'Subhan Care HMS — Password Reset OTP';
+    const text = `Hello,\n\nYou requested a password reset. Your 6-digit verification OTP is: ${resetToken}\n\nThis OTP is valid for 15 minutes. If you did not request this, please ignore this email.`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #4f46e5; text-align: center;">Subhan Care HMS</h2>
+        <p>Hello,</p>
+        <p>You requested a password reset. Please use the following 6-digit One-Time Password (OTP) to reset your password:</p>
+        <div style="font-size: 24px; font-weight: bold; letter-spacing: 2px; text-align: center; margin: 30px 0; padding: 15px; background-color: #f3f4f6; color: #111827; border-radius: 6px;">
+          ${resetToken}
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">This OTP is valid for 15 minutes. If you did not request this, you can safely ignore this email.</p>
+      </div>
+    `;
+
+    await sendEmail({ to: email, subject, text, html });
+
     res.status(200).json({
       success: true,
-      message: 'Password reset token generated successfully. Valid for 15 minutes.',
+      message: 'Password reset OTP generated and sent to email successfully. Valid for 15 minutes.',
       resetToken // Return token for dev / verification workflow
     });
 
@@ -132,7 +197,7 @@ const resetPassword = async (req, res) => {
     }
 
     // Hash token from request to compare with DB
-    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+    const resetPasswordToken = crypto.createHash('sha256').update(token.trim()).digest('hex');
 
     const user = await User.findOne({
       resetPasswordToken,
