@@ -399,7 +399,7 @@ const DoctorsPage = () => {
                       <th>Fee (PKR)</th>
                       <th>Availability Today</th>
                       <th>Account Status</th>
-                      <th>Actions</th>
+                      {isAdmin && <th>Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -437,6 +437,7 @@ const DoctorsPage = () => {
                               {doc.status?.toUpperCase()}
                             </Badge>
                           </td>
+                          {isAdmin && (
                           <td>
                             <div className={styles.actions}>
                               <Button
@@ -467,6 +468,7 @@ const DoctorsPage = () => {
                               )}
                             </div>
                           </td>
+                        )}
                         </tr>
                       );
                     })}
