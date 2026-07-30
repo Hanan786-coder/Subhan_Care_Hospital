@@ -77,20 +77,6 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
               <span className={styles.statusText}>System Live</span>
             </div>
           </div>
-          <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-            <ol className={styles.breadcrumbList}>
-              {breadcrumbs.map((crumb, index) => (
-                <li key={index} className={styles.breadcrumbItem}>
-                  <span className={index === breadcrumbs.length - 1 ? styles.crumbActive : styles.crumbText}>
-                    {crumb}
-                  </span>
-                  {index < breadcrumbs.length - 1 && (
-                    <ChevronRight size={14} className={styles.crumbSep} />
-                  )}
-                </li>
-              ))}
-            </ol>
-          </nav>
         </div>
       </div>
 

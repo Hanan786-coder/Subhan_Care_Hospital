@@ -38,6 +38,15 @@
   background: rgba(8, 145, 178, 0.18);
 }
 
+:root[data-theme='dark'] .statusIndicator {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+:root[data-theme='dark'] .statusText {
+  color: var(--color-secondary-300);
+}
+
 .contextBlock { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pageTitleRow { display: flex; align-items: center; min-width: 0; }
 .pageTitle {
