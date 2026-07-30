@@ -11,18 +11,18 @@ import {
 import styles from './Sidebar.module.css';
 
 const FULL_MENU = [
-  { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'patients', path: '/dashboard/patients', label: 'Patients', icon: Users },
-  { id: 'doctors', path: '/dashboard/doctors', label: 'Doctors', icon: UserCheck },
-  { id: 'staff', path: '/dashboard/staff', label: 'Staff Management', icon: UserPlus },
-  { id: 'appointments', path: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { id: 'prescriptions', path: '/dashboard/prescriptions', label: 'Prescriptions', icon: FileText },
-  { id: 'medical-history', path: '/dashboard/medical-history', label: 'Medical History', icon: ClipboardList },
-  { id: 'billing', path: '/dashboard/billing', label: 'Billing & Invoices', icon: CreditCard },
-  { id: 'inventory', path: '/dashboard/inventory', label: 'Inventory', icon: Package },
-  { id: 'reports', path: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-  { id: 'audit-logs', path: '/dashboard/audit-logs', label: 'Audit Logs', icon: ShieldCheck },
-  { id: 'settings', path: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { id: 'dashboard', path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'patients', path: '/patients', label: 'Patients', icon: Users },
+  { id: 'doctors', path: '/doctors', label: 'Doctors', icon: UserCheck },
+  { id: 'staff', path: '/staff', label: 'Staff Management', icon: UserPlus },
+  { id: 'appointments', path: '/appointments', label: 'Appointments', icon: Calendar },
+  { id: 'prescriptions', path: '/prescriptions', label: 'Prescriptions', icon: FileText },
+  { id: 'medical-history', path: '/medical-history', label: 'Medical History', icon: ClipboardList },
+  { id: 'billing', path: '/billing', label: 'Billing & Invoices', icon: CreditCard },
+  { id: 'inventory', path: '/inventory', label: 'Inventory', icon: Package },
+  { id: 'reports', path: '/reports', label: 'Reports', icon: BarChart3 },
+  { id: 'audit-logs', path: '/audit-logs', label: 'Audit Logs', icon: ShieldCheck },
+  { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const Sidebar = ({ isOpen, isMobile, onClose, onToggle }) => {
@@ -87,7 +87,7 @@ const Sidebar = ({ isOpen, isMobile, onClose, onToggle }) => {
               <li key={item.id}>
                 <NavLink
                   to={item.path}
-                  end={item.path === '/dashboard'}
+                  end={item.path === '/'}
                   className={({ isActive }) =>
                     `${styles.navLink} ${isActive ? styles.active : ''}`
                   }

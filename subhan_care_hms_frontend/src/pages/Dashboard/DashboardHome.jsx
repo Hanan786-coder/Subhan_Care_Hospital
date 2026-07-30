@@ -207,7 +207,7 @@ const DashboardHome = () => {
                 <div className={`${styles.alertBox} ${styles.alertWarning}`}>
                   <AlertTriangle size={18} className={styles.alertIcon} />
                   <div>
-                    <strong>Inventory Alert (FR-08.3)</strong>
+                    <strong>Inventory Alert</strong>
                     <p>Paracetamol 500mg is below reorder threshold.</p>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ const DashboardHome = () => {
                 <div className={`${styles.alertBox} ${styles.alertInfo}`}>
                   <Clock size={18} className={styles.alertIcon} />
                   <div>
-                    <strong>Auto-Session Timeout (FR-10.3)</strong>
+                    <strong>Auto-Session Timeout</strong>
                     <p>Sessions automatically terminate after 15 minutes of inactivity.</p>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ const DashboardHome = () => {
                 <div className={`${styles.alertBox} ${styles.alertSuccess}`}>
                   <CheckCircle2 size={18} className={styles.alertIcon} />
                   <div>
-                    <strong>AES-256 Cloud Backup (BR-01)</strong>
+                    <strong>AES-256 Cloud Backup</strong>
                     <p>24-hour encrypted database snapshot saved securely.</p>
                   </div>
                 </div>

@@ -202,19 +202,15 @@ const updatePatient = async (req, res) => {
   }
 };
 
-const deactivatePatient = async (req, res) => {
+const deletePatient = async (req, res) => {
   try {
-    const patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      { status: 'inactive' },
-      { new: true }
-    );
+    const patient = await Patient.findByIdAndDelete(req.params.id);
 
     if (!patient) {
       return res.status(404).json({ success: false, error: 'Patient not found' });
     }
 
-    res.status(200).json({ success: true, data: patient });
+    res.status(200).json({ success: true, message: 'Patient permanently deleted', data: patient });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -225,5 +221,6 @@ module.exports = {
   getPatients,
   getPatientById,
   updatePatient,
-  deactivatePatient
+  deletePatient
 };
+

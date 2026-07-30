@@ -1,7 +1,7 @@
 import api from './api';
 
-export const getStaffList = async () => {
-  const response = await api.get('/staff');
+export const getStaffList = async (params = {}) => {
+  const response = await api.get('/staff', { params });
   return response.data;
 };
 

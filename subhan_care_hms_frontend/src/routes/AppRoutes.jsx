@@ -47,11 +47,10 @@ export const AppRoutes = () => {
         <Route path={PUBLIC_ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path={PUBLIC_ROUTES.FORGOT_PASSWORD} element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
         
-        {/* Protected Dashboard Layout Shell */}
-        <Route path={PRIVATE_ROUTES.DASHBOARD} element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        {/* Protected Layout Shell */}
+        <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<DashboardHome />} />
           
-          {/* SRS Section 4 Role-Permission Matrix Enforcements */}
           <Route 
             path="patients" 
             element={
@@ -136,7 +135,7 @@ export const AppRoutes = () => {
         </Route>
 
         {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to={PRIVATE_ROUTES.DASHBOARD} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );

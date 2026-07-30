@@ -7,7 +7,7 @@ const {
   getPatients,
   getPatientById,
   updatePatient,
-  deactivatePatient
+  deletePatient
 } = require('../controllers/patient.controller');
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/rbac');
@@ -37,12 +37,11 @@ router.route('/:id')
     authorize('ADMIN', 'RECEPTIONIST'), 
     auditLogger('Patient'), 
     updatePatient
+  )
+  .delete(
+    authorize('ADMIN'),
+    auditLogger('Patient'),
+    deletePatient
   );
-
-router.patch('/:id/deactivate', 
-  authorize('ADMIN'), 
-  auditLogger('Patient'), 
-  deactivatePatient
-);
 
 module.exports = router;

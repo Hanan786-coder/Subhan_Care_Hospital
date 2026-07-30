@@ -20,7 +20,7 @@ export const updatePatient = async (id, patientData) => {
   return response.data;
 };
 
-export const deactivatePatient = async (id) => {
-  const response = await api.patch(`/patients/${id}/deactivate`);
+export const deletePatient = async (id) => {
+  const response = await api.delete(`/patients/${id}`);
   return response.data;
 };

@@ -11,16 +11,16 @@ export const PUBLIC_ROUTES = {
  * Private route paths (require authentication and role validation).
  */
 export const PRIVATE_ROUTES = {
-  DASHBOARD: '/dashboard',
-  PATIENTS: '/dashboard/patients',
-  DOCTORS: '/dashboard/doctors',
-  STAFF: '/dashboard/staff',
-  APPOINTMENTS: '/dashboard/appointments',
-  PRESCRIPTIONS: '/dashboard/prescriptions',
-  MEDICAL_HISTORY: '/dashboard/medical-history',
-  BILLING: '/dashboard/billing',
-  INVENTORY: '/dashboard/inventory',
-  REPORTS: '/dashboard/reports',
-  AUDIT_LOGS: '/dashboard/audit-logs',
-  SETTINGS: '/dashboard/settings',
+  DASHBOARD: '/',
+  PATIENTS: '/patients',
+  DOCTORS: '/doctors',
+  STAFF: '/staff',
+  APPOINTMENTS: '/appointments',
+  PRESCRIPTIONS: '/prescriptions',
+  MEDICAL_HISTORY: '/medical-history',
+  BILLING: '/billing',
+  INVENTORY: '/inventory',
+  REPORTS: '/reports',
+  AUDIT_LOGS: '/audit-logs',
+  SETTINGS: '/settings',
 };

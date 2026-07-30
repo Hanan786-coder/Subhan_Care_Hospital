@@ -68,21 +68,17 @@ export const AuthProvider = ({ children }) => {
   // Validate token on mount
   useEffect(() => {
     if (token) {
-      if (token === 'mock-jwt-token-12345') {
+      const decoded = parseJwt(token);
+      if (decoded && decoded.exp * 1000 > Date.now()) {
         setIsAuthenticated(true);
       } else {
-        const decoded = parseJwt(token);
-        if (decoded && decoded.exp * 1000 > Date.now()) {
-          setIsAuthenticated(true);
-        } else {
-          logout(); // Token expired
-        }
+        logout(); // Token expired
       }
     }
     setIsLoading(false);
   }, [token, logout]);
 
-  // Session timeout setup (timeout minutes from env, fallback 15 mins per SRS FR-10.3)
+  // Session timeout setup (fallback 15 mins)
   const sessionTimeoutMinutes = parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '15', 10);
   
   const handleTimeoutWarning = useCallback(() => {
@@ -144,7 +140,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Too many failed attempts. Login blocked for 15 minutes.');
       }
       
-      throw error;
+      const backendError = error.response?.data?.error || error.message || 'Login failed. Please check your credentials.';
+      throw new Error(backendError);
     }
   };
 

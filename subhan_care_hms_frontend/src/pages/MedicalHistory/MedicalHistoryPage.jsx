@@ -8,7 +8,7 @@ const MedicalHistoryPage = () => {
       <Card>
         <div style={{ padding: 'var(--space-12)', textAlign: 'center', color: 'var(--color-neutral-500)' }}>
           <h3>Medical History & Consultations</h3>
-          <p>Chronological patient diagnoses, consultation notes, and immutable medical history records (FR-06.1 - FR-06.7).</p>
+          <p>Chronological patient diagnoses, consultation notes, and immutable medical history records.</p>
         </div>
       </Card>
     </div>
