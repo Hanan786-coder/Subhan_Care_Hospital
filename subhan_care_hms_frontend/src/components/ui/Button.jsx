@@ -15,6 +15,7 @@ const Button = memo(({
   variant = 'primary', 
   size = 'md', 
   isLoading = false, 
+  loading,
   icon, 
   fullWidth = false, 
   className = '', 
@@ -22,22 +23,23 @@ const Button = memo(({
   disabled,
   ...props 
 }) => {
+  const isBusy = isLoading || loading;
   const baseClass = styles.button;
   const variantClass = styles[`variant-${variant}`];
   const sizeClass = styles[`size-${size}`];
   const fullWidthClass = fullWidth ? styles.fullWidth : '';
-  const loadingClass = isLoading ? styles.loading : '';
+  const loadingClass = isBusy ? styles.loading : '';
 
   return (
     <button
       className={`${baseClass} ${variantClass} ${sizeClass} ${fullWidthClass} ${loadingClass} ${className}`.trim()}
-      disabled={isLoading || disabled}
+      disabled={isBusy || disabled}
       {...props}
     >
-      {isLoading && (
+      {isBusy && (
         <span className={styles.spinner} aria-hidden="true" />
       )}
-      {!isLoading && icon && <span className={styles.icon}>{icon}</span>}
+      {!isBusy && icon && <span className={styles.icon}>{icon}</span>}
       <span className={styles.content}>{children}</span>
     </button>
   );

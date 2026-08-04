@@ -6,6 +6,40 @@ const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+const getDaySchedule = (doctor, date) => {
+  const dayName = DAY_NAMES[new Date(date).getDay()];
+  const schedule = doctor.schedule?.[dayName] || [];
+  return Array.isArray(schedule) ? schedule : [];
+};
+
+const getAvailableSlots = (doctor, date) => {
+  const schedule = getDaySchedule(doctor, date);
+  const existingAppointments = doctor.__appointments || [];
+  const slots = [];
+
+  schedule.forEach((segment) => {
+    const [startHour, startMinute] = segment.start.split(':').map(Number);
+    const [endHour, endMinute] = segment.end.split(':').map(Number);
+    let current = startHour * 60 + startMinute;
+    const end = endHour * 60 + endMinute;
+
+    while (current + 30 <= end) {
+      const slotStart = `${String(Math.floor(current / 60)).padStart(2, '0')}:${String(current % 60).padStart(2, '0')}`;
+      const slotEndMinutes = current + 30;
+      const slotEnd = `${String(Math.floor(slotEndMinutes / 60)).padStart(2, '0')}:${String(slotEndMinutes % 60).padStart(2, '0')}`;
+      const hasConflict = existingAppointments.some((appointment) => appointment.timeSlot?.start < slotEnd && appointment.timeSlot?.end > slotStart);
+      if (!hasConflict) {
+        slots.push({ start: slotStart, end: slotEnd });
+      }
+      current += 30;
+    }
+  });
+
+  return slots;
+};
+
 // Feature 2.2: Conflict Prevention Helper
 const checkConflict = async (doctorId, date, start, end, excludeAppointmentId = null) => {
   const query = {
@@ -25,9 +59,45 @@ const checkConflict = async (doctorId, date, start, end, excludeAppointmentId = 
   return !!conflictingAppt;
 };
 
+const getAppointments = async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.patientId) filter.patientId = req.query.patientId;
+    if (req.query.doctorId) filter.doctorId = req.query.doctorId;
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.date) filter.date = new Date(req.query.date);
+
+    const appointments = await Appointment.find(filter)
+      .populate('patientId', 'patientId fullName contactNumber')
+      .populate('doctorId', 'doctorId fullName specialization consultationFee')
+      .populate('createdBy', 'name role')
+      .sort({ date: -1, 'timeSlot.start': -1 });
+
+    res.json({ success: true, data: appointments });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 const bookAppointment = async (req, res) => {
   try {
     const { patientId, doctorId, date, timeSlot } = req.body;
+
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ success: false, error: 'Patient not found' });
+    }
+
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ success: false, error: 'Doctor not found' });
+    }
+
+    const availableSlots = getAvailableSlots(doctor, date);
+    const isSlotAllowed = availableSlots.some((slot) => slot.start === timeSlot.start && slot.end === timeSlot.end);
+    if (!isSlotAllowed) {
+      return res.status(409).json({ success: false, error: 'Selected time slot is not available for this doctor.' });
+    }
 
     // Check doctor availability (simplify check for slot format here)
     const isConflict = await checkConflict(doctorId, date, timeSlot.start, timeSlot.end);
@@ -82,7 +152,61 @@ const rescheduleAppointment = async (req, res) => {
   }
 };
 
+const cancelAppointment = async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    appointment.status = 'Cancelled';
+    appointment.reasonForCancellation = req.body.reasonForCancellation || appointment.reasonForCancellation;
+    await appointment.save();
+
+    res.json({ success: true, data: appointment });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const completeAppointment = async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    appointment.status = 'Completed';
+    await appointment.save();
+
+    res.json({ success: true, data: appointment });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const getAvailableAppointmentSlots = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.query.doctorId);
+    if (!doctor) {
+      return res.status(404).json({ success: false, error: 'Doctor not found' });
+    }
+
+    const appointments = await Appointment.find({ doctorId: req.query.doctorId, date: new Date(req.query.date), status: { $in: ['Scheduled', 'Rescheduled'] } });
+    doctor.__appointments = appointments;
+    const slots = getAvailableSlots(doctor, req.query.date);
+
+    res.json({ success: true, data: slots });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
+  getAppointments,
   bookAppointment,
-  rescheduleAppointment
+  rescheduleAppointment,
+  cancelAppointment,
+  completeAppointment,
+  getAvailableAppointmentSlots
 };

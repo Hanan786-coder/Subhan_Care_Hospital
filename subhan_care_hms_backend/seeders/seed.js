@@ -8,6 +8,13 @@ const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const Staff = require('../models/Staff');
 const Patient = require('../models/Patient');
+const Appointment = require('../models/Appointment');
+const Consultation = require('../models/Consultation');
+const Prescription = require('../models/Prescription');
+const MedicalHistory = require('../models/MedicalHistory');
+const Supplier = require('../models/Supplier');
+const InventoryItem = require('../models/InventoryItem');
+const Invoice = require('../models/Invoice');
 
 const seedUsers = async () => {
   try {
@@ -73,6 +80,8 @@ const seedUsers = async () => {
     ];
     await Doctor.create(doctors);
 
+    const doctorRecord = await Doctor.findOne({ doctorId: 'SC-DOC-00001' });
+
     // Seed Staff
     await Staff.deleteMany();
     const staff = [
@@ -105,7 +114,170 @@ const seedUsers = async () => {
     ];
     await Patient.create(patients);
 
-    console.log('Database seeded with demo users, doctors, staff, and patients!');
+    const patientRecord = await Patient.findOne({ patientId: 'SC-PAT-00001' });
+
+    await Supplier.deleteMany();
+    const suppliers = await Supplier.create([
+      {
+        supplierId: 'SC-SUP-00001',
+        name: 'MediCare Distributors',
+        contactPerson: 'Ahsan Khan',
+        phone: '0300-3334444',
+        email: 'orders@medicare.example',
+        address: 'Lahore'
+      },
+      {
+        supplierId: 'SC-SUP-00002',
+        name: 'HealthLine Supplies',
+        contactPerson: 'Sara Noor',
+        phone: '0301-5556666',
+        email: 'sales@healthline.example',
+        address: 'Karachi'
+      }
+    ]);
+
+    await InventoryItem.deleteMany();
+    const inventoryItems = await InventoryItem.create([
+      {
+        itemId: 'SC-INV-00001',
+        name: 'Paracetamol 500mg',
+        category: 'Medicine',
+        batchNumber: 'PCT-2026-01',
+        expiryDate: new Date('2027-06-30'),
+        quantityInStock: 250,
+        reorderThreshold: 50,
+        unitPrice: 12,
+        supplierId: suppliers[0]._id,
+        location: 'Pharmacy Rack A'
+      },
+      {
+        itemId: 'SC-INV-00002',
+        name: 'Amoxicillin 250mg',
+        category: 'Medicine',
+        batchNumber: 'AMX-2026-03',
+        expiryDate: new Date('2026-09-15'),
+        quantityInStock: 18,
+        reorderThreshold: 40,
+        unitPrice: 35,
+        supplierId: suppliers[1]._id,
+        location: 'Pharmacy Rack B'
+      },
+      {
+        itemId: 'SC-INV-00003',
+        name: 'Gauze Roll',
+        category: 'Medical Supply',
+        batchNumber: 'GR-2026-02',
+        expiryDate: new Date('2026-08-20'),
+        quantityInStock: 12,
+        reorderThreshold: 20,
+        unitPrice: 80,
+        supplierId: suppliers[0]._id,
+        location: 'Store Room'
+      }
+    ]);
+
+    await Appointment.deleteMany();
+    const appointments = await Appointment.create([
+      {
+        appointmentId: 'SC-APT-00001',
+        patientId: patientRecord._id,
+        doctorId: doctorRecord._id,
+        date: new Date('2026-08-05'),
+        timeSlot: { start: '09:00', end: '09:30' },
+        status: 'Completed',
+        createdBy: (await User.findOne({ role: 'RECEPTIONIST' }))._id
+      },
+      {
+        appointmentId: 'SC-APT-00002',
+        patientId: patientRecord._id,
+        doctorId: doctorRecord._id,
+        date: new Date('2026-08-06'),
+        timeSlot: { start: '10:00', end: '10:30' },
+        status: 'Scheduled',
+        createdBy: (await User.findOne({ role: 'RECEPTIONIST' }))._id
+      }
+    ]);
+
+    await Consultation.deleteMany();
+    const consultation = await Consultation.create([
+      {
+        consultationId: 'SC-CON-00001',
+        appointmentId: appointments[0]._id,
+        patientId: patientRecord._id,
+        doctorId: doctorRecord._id,
+        symptoms: ['Fever', 'Headache'],
+        diagnosis: 'Seasonal viral infection',
+        notes: 'Patient advised rest and hydration. No red flags.',
+        followUpInstructions: 'Return if fever persists beyond 3 days.',
+        status: 'Completed',
+        createdBy: (await User.findOne({ role: 'DOCTOR' }))._id,
+        completedAt: new Date('2026-08-05T10:00:00Z')
+      }
+    ]);
+
+    await Prescription.deleteMany();
+    const prescription = await Prescription.create([
+      {
+        prescriptionId: 'SC-RX-00001',
+        consultationId: consultation[0]._id,
+        appointmentId: appointments[0]._id,
+        patientId: patientRecord._id,
+        doctorId: doctorRecord._id,
+        items: [
+          { medicineName: 'Paracetamol 500mg', dosage: '1 tablet', frequency: 'Twice daily', duration: '5 days', instructions: 'After meals', quantity: 10 },
+          { medicineName: 'Amoxicillin 250mg', dosage: '1 capsule', frequency: 'Three times daily', duration: '5 days', instructions: 'Complete course', quantity: 15 }
+        ],
+        status: 'Dispensed',
+        issuedAt: new Date('2026-08-05T09:15:00Z'),
+        dispensedAt: new Date('2026-08-05T11:00:00Z'),
+        createdBy: (await User.findOne({ role: 'DOCTOR' }))._id
+      }
+    ]);
+
+    await MedicalHistory.deleteMany();
+    await MedicalHistory.create([
+      {
+        consultationId: consultation[0]._id,
+        patientId: patientRecord._id,
+        doctorId: doctorRecord._id,
+        visitDate: new Date('2026-08-05T09:15:00Z'),
+        symptoms: ['Fever', 'Headache'],
+        diagnosis: 'Seasonal viral infection',
+        notes: 'Patient advised rest and hydration. No red flags.',
+        prescriptions: [{ prescriptionId: prescription[0]._id, prescriptionNumber: prescription[0].prescriptionId, summary: 'Paracetamol 500mg, Amoxicillin 250mg' }],
+        followUpInstructions: 'Return if fever persists beyond 3 days.',
+        version: 1,
+        createdBy: (await User.findOne({ role: 'DOCTOR' }))._id
+      }
+    ]);
+
+    await Invoice.deleteMany();
+    await Invoice.create([
+      {
+        invoiceId: 'SC-INVOC-00001',
+        patientId: patientRecord._id,
+        appointmentId: appointments[0]._id,
+        consultationId: consultation[0]._id,
+        prescriptionId: prescription[0]._id,
+        items: [
+          { type: 'Consultation', description: 'Consultation fee', quantity: 1, unitPrice: 1500, amount: 1500 },
+          { type: 'Medicine', description: 'Paracetamol 500mg', quantity: 10, unitPrice: 12, amount: 120 },
+          { type: 'Medicine', description: 'Amoxicillin 250mg', quantity: 15, unitPrice: 35, amount: 525 }
+        ],
+        paymentMethod: 'Cash',
+        status: 'Partially Paid',
+        subtotal: 2145,
+        discount: 0,
+        tax: 0,
+        total: 2145,
+        amountPaid: 1500,
+        balanceDue: 645,
+        issuedBy: (await User.findOne({ role: 'BILLING_STAFF' }))._id,
+        issuedAt: new Date('2026-08-05T11:15:00Z')
+      }
+    ]);
+
+    console.log('Database seeded with demo users, doctors, staff, patients, appointments, consultations, prescriptions, history, inventory, suppliers, and invoices!');
     process.exit();
   } catch (error) {
     console.error(error);
