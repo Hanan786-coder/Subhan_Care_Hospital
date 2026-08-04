@@ -5,6 +5,7 @@ import { getPatients } from '@/services/patientService';
 import { useSearchParams } from 'react-router-dom';
 import { History, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import styles from './MedicalHistory.module.css';
 
 const MedicalHistoryPage = () => {
   const [searchParams] = useSearchParams();
@@ -35,16 +36,16 @@ const MedicalHistoryPage = () => {
   }, [history, search]);
 
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
+    <div className={styles.page}>
       <div>
-        <h2 style={{ margin: 0 }}>Medical History</h2>
-        <p style={{ margin: '8px 0 0', color: 'var(--color-neutral-600)' }}>Chronological consultation records with immutable clinical notes and prescriptions.</p>
+        <h2 className={styles.title}>Medical History</h2>
+        <p className={styles.subtitle}>Chronological consultation records with immutable clinical notes and prescriptions.</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div style={{ display: 'grid', gap: '12px', width: '100%' }}>
-            <select value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+          <div className={styles.controls}>
+            <select value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)} className={styles.filterSelect}>
               <option value="">All Patients</option>
               {patients.map((patient) => <option key={patient._id} value={patient._id}>{patient.fullName}</option>)}
             </select>
@@ -53,19 +54,19 @@ const MedicalHistoryPage = () => {
         </CardHeader>
         <CardBody>
           {loading ? <Spinner /> : (
-            <div style={{ display: 'grid', gap: '14px' }}>
+            <div className={styles.list}>
               {filteredHistory.map((entry) => (
-                <div key={entry._id} style={{ border: '1px solid var(--color-neutral-200)', borderRadius: '16px', padding: '16px', display: 'grid', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div key={entry._id} className={styles.historyCard}>
+                  <div className={styles.historyHeader}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{entry.patientId?.fullName || 'Unknown Patient'}</div>
-                      <div style={{ color: 'var(--color-neutral-600)' }}>{new Date(entry.visitDate).toLocaleString()}</div>
+                      <div className={styles.historyMeta}>{new Date(entry.visitDate).toLocaleString()}</div>
                     </div>
                     <Badge variant="info">Version {entry.version}</Badge>
                   </div>
-                  <div style={{ color: 'var(--color-neutral-600)' }}>{entry.diagnosis}</div>
+                  <div className={styles.historyMeta}>{entry.diagnosis}</div>
                   <div style={{ color: 'var(--color-neutral-500)' }}>{entry.notes}</div>
-                  {entry.prescriptions?.length ? <div style={{ color: 'var(--color-neutral-600)' }}>Prescriptions: {entry.prescriptions.map((item) => item.prescriptionNumber).join(', ')}</div> : null}
+                  {entry.prescriptions?.length ? <div className={styles.historyMeta}>Prescriptions: {entry.prescriptions.map((item) => item.prescriptionNumber).join(', ')}</div> : null}
                 </div>
               ))}
             </div>

@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/constants/roles';
 import { Package, Plus, Search, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
+import styles from './Inventory.module.css';
 
 const InventoryPage = () => {
   const { user } = useAuth();
@@ -64,14 +65,14 @@ const InventoryPage = () => {
   };
 
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h2 style={{ margin: 0 }}>Inventory</h2>
-          <p style={{ margin: '8px 0 0', color: 'var(--color-neutral-600)' }}>Track stock levels, low-stock thresholds, expiries, and suppliers.</p>
+          <h2 className={styles.title}>Inventory</h2>
+          <p className={styles.subtitle}>Track stock levels, low-stock thresholds, expiries, and suppliers.</p>
         </div>
         {canManage && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className={styles.actions}>
             <Button variant="secondary" icon={<Truck size={16} />} onClick={() => setIsSupplierModalOpen(true)}>Add Supplier</Button>
             <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIsItemModalOpen(true)}>Add Item</Button>
           </div>
@@ -84,17 +85,17 @@ const InventoryPage = () => {
         </CardHeader>
         <CardBody>
           {loading ? <Spinner /> : (
-            <div style={{ display: 'grid', gap: '14px' }}>
+            <div className={styles.list}>
               {filteredItems.map((item) => (
-                <div key={item._id} style={{ border: '1px solid var(--color-neutral-200)', borderRadius: '16px', padding: '16px', display: 'grid', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div key={item._id} className={styles.itemCard}>
+                  <div className={styles.itemHeader}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{item.name}</div>
-                      <div style={{ color: 'var(--color-neutral-600)' }}>{item.batchNumber} • {item.category}</div>
+                      <div className={styles.itemMeta}>{item.batchNumber} • {item.category}</div>
                     </div>
                     <Badge variant={item.quantityInStock <= item.reorderThreshold ? 'warning' : 'success'}>{item.quantityInStock} in stock</Badge>
                   </div>
-                  <div style={{ color: 'var(--color-neutral-600)' }}>Expiry: {new Date(item.expiryDate).toLocaleDateString()} | Supplier: {item.supplierId?.name || 'N/A'}</div>
+                  <div className={styles.itemMeta}>Expiry: {new Date(item.expiryDate).toLocaleDateString()} | Supplier: {item.supplierId?.name || 'N/A'}</div>
                 </div>
               ))}
             </div>
@@ -103,16 +104,16 @@ const InventoryPage = () => {
       </Card>
 
       <Modal isOpen={isItemModalOpen} onClose={() => setIsItemModalOpen(false)} title="Add Inventory Item">
-        <form onSubmit={handleItemSubmit} style={{ display: 'grid', gap: '12px' }}>
+        <form onSubmit={handleItemSubmit} className={styles.modalForm}>
           <Input label="Item name" value={itemForm.name} onChange={(e) => setItemForm((prev) => ({ ...prev, name: e.target.value }))} />
           <Input label="Batch number" value={itemForm.batchNumber} onChange={(e) => setItemForm((prev) => ({ ...prev, batchNumber: e.target.value }))} />
           <Input label="Expiry date" type="date" value={itemForm.expiryDate} onChange={(e) => setItemForm((prev) => ({ ...prev, expiryDate: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div className={styles.itemGrid}>
             <Input label="Stock" type="number" value={itemForm.quantityInStock} onChange={(e) => setItemForm((prev) => ({ ...prev, quantityInStock: e.target.value }))} />
             <Input label="Reorder threshold" type="number" value={itemForm.reorderThreshold} onChange={(e) => setItemForm((prev) => ({ ...prev, reorderThreshold: e.target.value }))} />
             <Input label="Unit price" type="number" value={itemForm.unitPrice} onChange={(e) => setItemForm((prev) => ({ ...prev, unitPrice: e.target.value }))} />
           </div>
-          <select value={itemForm.supplierId} onChange={(e) => setItemForm((prev) => ({ ...prev, supplierId: e.target.value }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+          <select value={itemForm.supplierId} onChange={(e) => setItemForm((prev) => ({ ...prev, supplierId: e.target.value }))} className={styles.itemCard}>
             <option value="">Select supplier</option>
             {suppliers.map((supplier) => <option key={supplier._id} value={supplier._id}>{supplier.name}</option>)}
           </select>
@@ -121,7 +122,7 @@ const InventoryPage = () => {
       </Modal>
 
       <Modal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} title="Add Supplier">
-        <form onSubmit={handleSupplierSubmit} style={{ display: 'grid', gap: '12px' }}>
+        <form onSubmit={handleSupplierSubmit} className={styles.modalForm}>
           <Input label="Supplier name" value={supplierForm.name} onChange={(e) => setSupplierForm((prev) => ({ ...prev, name: e.target.value }))} />
           <Input label="Contact person" value={supplierForm.contactPerson} onChange={(e) => setSupplierForm((prev) => ({ ...prev, contactPerson: e.target.value }))} />
           <Input label="Phone" value={supplierForm.phone} onChange={(e) => setSupplierForm((prev) => ({ ...prev, phone: e.target.value }))} />

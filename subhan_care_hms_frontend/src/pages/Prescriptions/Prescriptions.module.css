@@ -1,0 +1,66 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--color-neutral-600);
+}
+
+.controls {
+  width: 100%;
+}
+
+.list {
+  display: grid;
+  gap: 14px;
+}
+
+.prescriptionCard {
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  background: var(--color-surface-card, #fff);
+}
+
+.prescriptionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.prescriptionMeta {
+  color: var(--color-neutral-600);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modalForm {
+  display: grid;
+  gap: 14px;
+}

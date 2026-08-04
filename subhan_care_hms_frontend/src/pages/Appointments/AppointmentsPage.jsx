@@ -7,6 +7,7 @@ import { ROLES } from '@/constants/roles';
 import { useAuth } from '@/context/AuthContext';
 import { CalendarDays, Search, Clock3, XCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import styles from './Appointments.module.css';
 
 const STATUS_VARIANTS = {
   Scheduled: 'info',
@@ -150,26 +151,26 @@ const AppointmentsPage = () => {
   };
 
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h2 style={{ margin: 0 }}>Appointment Module</h2>
-          <p style={{ margin: '8px 0 0', color: 'var(--color-neutral-600)' }}>Schedule visits, reschedule slots, and manage consultation status.</p>
+          <h2 className={styles.title}>Appointment Module</h2>
+          <p className={styles.subtitle}>Schedule visits, reschedule slots, and manage consultation status.</p>
         </div>
         {canManage && <Button variant="primary" icon={<CalendarDays size={16} />} onClick={openCreateModal}>Book Appointment</Button>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <Card><CardBody><div style={{ color: 'var(--color-neutral-600)', fontSize: '0.85rem' }}>Appointments</div><div style={{ fontSize: '2rem', fontWeight: 800 }}>{appointments.length}</div></CardBody></Card>
-        <Card><CardBody><div style={{ color: 'var(--color-neutral-600)', fontSize: '0.85rem' }}>Scheduled</div><div style={{ fontSize: '2rem', fontWeight: 800 }}>{appointments.filter((appointment) => appointment.status === 'Scheduled').length}</div></CardBody></Card>
-        <Card><CardBody><div style={{ color: 'var(--color-neutral-600)', fontSize: '0.85rem' }}>Completed</div><div style={{ fontSize: '2rem', fontWeight: 800 }}>{appointments.filter((appointment) => appointment.status === 'Completed').length}</div></CardBody></Card>
+      <div className={styles.statsGrid}>
+        <Card><CardBody><div className={styles.statLabel}>Appointments</div><div className={styles.statValue}>{appointments.length}</div></CardBody></Card>
+        <Card><CardBody><div className={styles.statLabel}>Scheduled</div><div className={styles.statValue}>{appointments.filter((appointment) => appointment.status === 'Scheduled').length}</div></CardBody></Card>
+        <Card><CardBody><div className={styles.statLabel}>Completed</div><div className={styles.statValue}>{appointments.filter((appointment) => appointment.status === 'Completed').length}</div></CardBody></Card>
       </div>
 
       <Card>
         <CardHeader>
-          <div style={{ display: 'grid', gap: '12px', width: '100%' }}>
+          <div className={styles.controls}>
             <Input placeholder="Search by appointment, patient, or doctor" value={search} onChange={(e) => setSearch(e.target.value)} icon={<Search size={16} />} />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+            <select className={styles.filterSelect} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All Statuses</option>
               <option value="Scheduled">Scheduled</option>
               <option value="Completed">Completed</option>
@@ -181,42 +182,42 @@ const AppointmentsPage = () => {
         </CardHeader>
         <CardBody>
           {loading ? <Spinner /> : (
-            <div style={{ display: 'grid', gap: '14px' }}>
+            <div className={styles.list}>
               {filteredAppointments.map((appointment) => (
-                <div key={appointment._id} style={{ border: '1px solid var(--color-neutral-200)', borderRadius: '16px', padding: '16px', display: 'grid', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                <div key={appointment._id} className={styles.appointmentCard}>
+                  <div className={styles.appointmentHeader}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{appointment.appointmentId}</div>
-                      <div style={{ color: 'var(--color-neutral-600)' }}>{appointment.patientId?.fullName || 'Unknown Patient'} • {appointment.doctorId?.fullName || 'Unknown Doctor'}</div>
+                      <div className={styles.appointmentMeta}>{appointment.patientId?.fullName || 'Unknown Patient'} • {appointment.doctorId?.fullName || 'Unknown Doctor'}</div>
                     </div>
                     <Badge variant={STATUS_VARIANTS[appointment.status] || 'secondary'}>{appointment.status}</Badge>
                   </div>
-                  <div style={{ color: 'var(--color-neutral-600)' }}>{new Date(appointment.date).toLocaleDateString()} • {appointment.timeSlot?.start} - {appointment.timeSlot?.end}</div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className={styles.appointmentMeta}>{new Date(appointment.date).toLocaleDateString()} • {appointment.timeSlot?.start} - {appointment.timeSlot?.end}</div>
+                  <div className={styles.actions}>
                     <Button size="sm" variant="secondary" icon={<RefreshCw size={14} />} onClick={() => openRescheduleModal(appointment)}>Reschedule</Button>
                     <Button size="sm" variant="outline" icon={<XCircle size={14} />} onClick={() => handleCancel(appointment)}>Cancel</Button>
                     <Button size="sm" variant="primary" icon={<CheckCircle2 size={14} />} onClick={() => handleComplete(appointment)}>Complete</Button>
                   </div>
                 </div>
               ))}
-              {!filteredAppointments.length && <div style={{ color: 'var(--color-neutral-500)' }}>No appointments found.</div>}
+              {!filteredAppointments.length && <div className={styles.emptyState}>No appointments found.</div>}
             </div>
           )}
         </CardBody>
       </Card>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingAppointment ? 'Reschedule Appointment' : 'Book Appointment'}>
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-          <select value={formData.patientId} onChange={(e) => setFormData((prev) => ({ ...prev, patientId: e.target.value }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+        <form onSubmit={handleSubmit} className={styles.modalForm}>
+          <select value={formData.patientId} onChange={(e) => setFormData((prev) => ({ ...prev, patientId: e.target.value }))} className={styles.slotSelect}>
             <option value="">Select patient</option>
             {patients.map((patient) => <option key={patient._id} value={patient._id}>{patient.fullName}</option>)}
           </select>
-          <select value={formData.doctorId} onChange={(e) => setFormData((prev) => ({ ...prev, doctorId: e.target.value }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+          <select value={formData.doctorId} onChange={(e) => setFormData((prev) => ({ ...prev, doctorId: e.target.value }))} className={styles.slotSelect}>
             <option value="">Select doctor</option>
             {doctors.map((doctor) => <option key={doctor._id} value={doctor._id}>{doctor.fullName} - {doctor.specialization}</option>)}
           </select>
           <Input type="date" value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} />
-          <select value={formData.start} onChange={(e) => setFormData((prev) => ({ ...prev, start: e.target.value, end: slots.find((slot) => slot.start === e.target.value)?.end || prev.end }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+          <select value={formData.start} onChange={(e) => setFormData((prev) => ({ ...prev, start: e.target.value, end: slots.find((slot) => slot.start === e.target.value)?.end || prev.end }))} className={styles.slotSelect}>
             <option value="">Select available slot</option>
             {slots.map((slot) => <option key={`${slot.start}-${slot.end}`} value={slot.start}>{slot.start} - {slot.end}</option>)}
           </select>

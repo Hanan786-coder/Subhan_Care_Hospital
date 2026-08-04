@@ -6,6 +6,7 @@ import { ROLES } from '@/constants/roles';
 import { useAuth } from '@/context/AuthContext';
 import { ReceiptText, Search, WalletCards, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import styles from './Billing.module.css';
 
 const BillingPage = () => {
   const { user } = useAuth();
@@ -80,26 +81,26 @@ const BillingPage = () => {
   };
 
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h2 style={{ margin: 0 }}>Billing & Invoice</h2>
-          <p style={{ margin: '8px 0 0', color: 'var(--color-neutral-600)' }}>Create invoices, track partial payments, and expose printable receipts.</p>
+          <h2 className={styles.title}>Billing & Invoice</h2>
+          <p className={styles.subtitle}>Create invoices, track partial payments, and expose printable receipts.</p>
         </div>
         {canManage && <Button variant="primary" icon={<ReceiptText size={16} />} onClick={() => setIsModalOpen(true)}>Generate Invoice</Button>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <Card><CardBody><div style={{ color: 'var(--color-neutral-600)', fontSize: '0.85rem' }}>Invoices</div><div style={{ fontSize: '2rem', fontWeight: 800 }}>{invoices.length}</div></CardBody></Card>
-        <Card><CardBody><div style={{ color: 'var(--color-neutral-600)', fontSize: '0.85rem' }}>Revenue</div><div style={{ fontSize: '2rem', fontWeight: 800 }}>Rs. {totalRevenue.toLocaleString()}</div></CardBody></Card>
-        <Card><CardBody><div style={{ color: 'var(--color-neutral-600)', fontSize: '0.85rem' }}>Outstanding</div><div style={{ fontSize: '2rem', fontWeight: 800 }}>Rs. {outstanding.toLocaleString()}</div></CardBody></Card>
+      <div className={styles.statsGrid}>
+        <Card><CardBody><div className={styles.statLabel}>Invoices</div><div className={styles.statValue}>{invoices.length}</div></CardBody></Card>
+        <Card><CardBody><div className={styles.statLabel}>Revenue</div><div className={styles.statValue}>Rs. {totalRevenue.toLocaleString()}</div></CardBody></Card>
+        <Card><CardBody><div className={styles.statLabel}>Outstanding</div><div className={styles.statValue}>Rs. {outstanding.toLocaleString()}</div></CardBody></Card>
       </div>
 
       <Card>
         <CardHeader>
-          <div style={{ display: 'grid', gap: '12px', width: '100%' }}>
+          <div className={styles.controls}>
             <Input placeholder="Search invoice or patient" value={search} onChange={(e) => setSearch(e.target.value)} icon={<Search size={16} />} />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+            <select className={styles.filterSelect} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All Statuses</option>
               <option value="Unpaid">Unpaid</option>
               <option value="Partially Paid">Partially Paid</option>
@@ -109,18 +110,18 @@ const BillingPage = () => {
         </CardHeader>
         <CardBody>
           {loading ? <Spinner /> : (
-            <div style={{ display: 'grid', gap: '14px' }}>
+            <div className={styles.list}>
               {filteredInvoices.map((invoice) => (
-                <div key={invoice._id} style={{ border: '1px solid var(--color-neutral-200)', borderRadius: '16px', padding: '16px', display: 'grid', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div key={invoice._id} className={styles.invoiceCard}>
+                  <div className={styles.invoiceHeader}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{invoice.invoiceId}</div>
-                      <div style={{ color: 'var(--color-neutral-600)' }}>{invoice.patientId?.fullName || 'Unknown Patient'}</div>
+                      <div className={styles.invoiceMeta}>{invoice.patientId?.fullName || 'Unknown Patient'}</div>
                     </div>
                     <Badge variant={invoice.status === 'Paid' ? 'success' : invoice.status === 'Partially Paid' ? 'warning' : 'secondary'}>{invoice.status}</Badge>
                   </div>
-                  <div style={{ color: 'var(--color-neutral-600)' }}>Total Rs. {invoice.total?.toLocaleString()} | Paid Rs. {invoice.amountPaid?.toLocaleString()} | Balance Rs. {invoice.balanceDue?.toLocaleString()}</div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className={styles.invoiceMeta}>Total Rs. {invoice.total?.toLocaleString()} | Paid Rs. {invoice.amountPaid?.toLocaleString()} | Balance Rs. {invoice.balanceDue?.toLocaleString()}</div>
+                  <div className={styles.actions}>
                     <Button size="sm" variant="secondary" icon={<Download size={14} />}>Receipt</Button>
                     <Button size="sm" variant="primary" icon={<WalletCards size={14} />} onClick={() => handlePayment(invoice)}>Mark Paid</Button>
                   </div>
@@ -132,13 +133,13 @@ const BillingPage = () => {
       </Card>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Generate Invoice">
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-          <select value={formData.patientId} onChange={(e) => setFormData((prev) => ({ ...prev, patientId: e.target.value }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+        <form onSubmit={handleSubmit} className={styles.modalForm}>
+          <select value={formData.patientId} onChange={(e) => setFormData((prev) => ({ ...prev, patientId: e.target.value }))} className={styles.filterSelect}>
             <option value="">Select patient</option>
             {patients.map((patient) => <option key={patient._id} value={patient._id}>{patient.fullName}</option>)}
           </select>
           <Input label="Payment Method" value={formData.paymentMethod} onChange={(e) => setFormData((prev) => ({ ...prev, paymentMethod: e.target.value }))} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div className={styles.itemGrid}>
             <Input type="number" label="Discount" value={formData.discount} onChange={(e) => setFormData((prev) => ({ ...prev, discount: e.target.value }))} />
             <Input type="number" label="Tax" value={formData.tax} onChange={(e) => setFormData((prev) => ({ ...prev, tax: e.target.value }))} />
             <Input type="number" label="Amount Paid" value={formData.amountPaid} onChange={(e) => setFormData((prev) => ({ ...prev, amountPaid: e.target.value }))} />

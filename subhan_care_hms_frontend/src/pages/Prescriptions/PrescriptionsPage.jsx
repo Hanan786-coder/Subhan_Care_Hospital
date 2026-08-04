@@ -7,6 +7,7 @@ import { ROLES } from '@/constants/roles';
 import { useAuth } from '@/context/AuthContext';
 import { Pill, Search, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
+import styles from './Prescriptions.module.css';
 
 const PrescriptionsPage = () => {
   const { user } = useAuth();
@@ -69,11 +70,11 @@ const PrescriptionsPage = () => {
   };
 
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h2 style={{ margin: 0 }}>Prescription Module</h2>
-          <p style={{ margin: '8px 0 0', color: 'var(--color-neutral-600)' }}>Issue medicines during consultation and let pharmacy process them without altering dosage.</p>
+          <h2 className={styles.title}>Prescription Module</h2>
+          <p className={styles.subtitle}>Issue medicines during consultation and let pharmacy process them without altering dosage.</p>
         </div>
         {canCreate && <Button variant="primary" icon={<Pill size={16} />} onClick={() => setIsModalOpen(true)}>Create Prescription</Button>}
       </div>
@@ -84,17 +85,17 @@ const PrescriptionsPage = () => {
         </CardHeader>
         <CardBody>
           {loading ? <Spinner /> : (
-            <div style={{ display: 'grid', gap: '14px' }}>
+            <div className={styles.list}>
               {filteredPrescriptions.map((prescription) => (
-                <div key={prescription._id} style={{ border: '1px solid var(--color-neutral-200)', borderRadius: '16px', padding: '16px', display: 'grid', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div key={prescription._id} className={styles.prescriptionCard}>
+                  <div className={styles.prescriptionHeader}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{prescription.prescriptionId}</div>
-                      <div style={{ color: 'var(--color-neutral-600)' }}>{prescription.patientId?.fullName || 'Unknown Patient'} • {prescription.doctorId?.fullName || 'Unknown Doctor'}</div>
+                      <div className={styles.prescriptionMeta}>{prescription.patientId?.fullName || 'Unknown Patient'} • {prescription.doctorId?.fullName || 'Unknown Doctor'}</div>
                     </div>
                     <Badge variant={prescription.status === 'Dispensed' ? 'success' : prescription.status === 'Cancelled' ? 'danger' : 'primary'}>{prescription.status}</Badge>
                   </div>
-                  <div style={{ color: 'var(--color-neutral-600)' }}>{(prescription.items || []).map((item) => `${item.medicineName} (${item.dosage})`).join(', ')}</div>
+                  <div className={styles.prescriptionMeta}>{(prescription.items || []).map((item) => `${item.medicineName} (${item.dosage})`).join(', ')}</div>
                   {canDispense && <Button size="sm" variant="secondary" icon={<ShieldCheck size={14} />} onClick={() => handleDispense(prescription)}>Mark Dispensed</Button>}
                 </div>
               ))}
@@ -104,12 +105,12 @@ const PrescriptionsPage = () => {
       </Card>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Prescription">
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-          <select value={formData.patientId} onChange={(e) => setFormData((prev) => ({ ...prev, patientId: e.target.value }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+        <form onSubmit={handleSubmit} className={styles.modalForm}>
+          <select value={formData.patientId} onChange={(e) => setFormData((prev) => ({ ...prev, patientId: e.target.value }))} className={styles.prescriptionCard}>
             <option value="">Select patient</option>
             {patients.map((patient) => <option key={patient._id} value={patient._id}>{patient.fullName}</option>)}
           </select>
-          <select value={formData.doctorId} onChange={(e) => setFormData((prev) => ({ ...prev, doctorId: e.target.value }))} style={{ padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--color-neutral-200)' }}>
+          <select value={formData.doctorId} onChange={(e) => setFormData((prev) => ({ ...prev, doctorId: e.target.value }))} className={styles.prescriptionCard}>
             <option value="">Select doctor</option>
             {doctors.map((doctor) => <option key={doctor._id} value={doctor._id}>{doctor.fullName}</option>)}
           </select>
