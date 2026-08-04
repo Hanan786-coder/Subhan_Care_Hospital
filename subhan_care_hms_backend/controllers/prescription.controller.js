@@ -54,6 +54,14 @@ const getPrescriptions = async (req, res) => {
     if (req.query.patientId) filter.patientId = req.query.patientId;
     if (req.query.doctorId) filter.doctorId = req.query.doctorId;
     if (req.query.status) filter.status = req.query.status;
+
+    if (req.user.role === 'DOCTOR') {
+      if (!req.user.linkedEntityId) {
+        return res.status(403).json({ success: false, error: 'Doctor profile is not linked to this account' });
+      }
+      filter.doctorId = req.user.linkedEntityId;
+    }
+
     const prescriptions = await Prescription.find(filter)
       .populate('patientId', 'patientId fullName')
       .populate('doctorId', 'doctorId fullName')

@@ -9,6 +9,6 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', authorize('ADMIN', 'DOCTOR'), getMedicalHistory);
-router.put('/:id/correct', authorize('ADMIN', 'DOCTOR'), auditLogger('MedicalHistory'), addHistoryCorrection);
+router.put('/:id/correct', authorize('DOCTOR'), auditLogger('MedicalHistory'), addHistoryCorrection);
 
 module.exports = router;

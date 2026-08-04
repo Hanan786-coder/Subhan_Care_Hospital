@@ -67,6 +67,13 @@ const getAppointments = async (req, res) => {
     if (req.query.status) filter.status = req.query.status;
     if (req.query.date) filter.date = new Date(req.query.date);
 
+    if (req.user.role === 'DOCTOR') {
+      if (!req.user.linkedEntityId) {
+        return res.status(403).json({ success: false, error: 'Doctor profile is not linked to this account' });
+      }
+      filter.doctorId = req.user.linkedEntityId;
+    }
+
     const appointments = await Appointment.find(filter)
       .populate('patientId', 'patientId fullName contactNumber')
       .populate('doctorId', 'doctorId fullName specialization consultationFee')
@@ -190,6 +197,12 @@ const getAvailableAppointmentSlots = async (req, res) => {
     const doctor = await Doctor.findById(req.query.doctorId);
     if (!doctor) {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
+    }
+
+    if (req.user.role === 'DOCTOR') {
+      if (!req.user.linkedEntityId || req.user.linkedEntityId.toString() !== doctor._id.toString()) {
+        return res.status(403).json({ success: false, error: 'Not authorized to view another doctor schedule' });
+      }
     }
 
     const appointments = await Appointment.find({ doctorId: req.query.doctorId, date: new Date(req.query.date), status: { $in: ['Scheduled', 'Rescheduled'] } });

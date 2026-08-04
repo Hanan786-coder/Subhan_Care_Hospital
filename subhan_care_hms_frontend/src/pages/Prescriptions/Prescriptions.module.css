@@ -1,66 +1,132 @@
-.page {
-  display: grid;
-  gap: 20px;
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
   align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.title {
-  margin: 0;
+.headerTitle h2 {
   color: var(--color-neutral-900);
-  font-size: 1.75rem;
+  font-size: 1.625rem;
   font-weight: 700;
+  margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
 }
 
-.subtitle {
-  margin: 8px 0 0;
+.headerTitle p {
   color: var(--color-neutral-600);
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-.controls {
+.controlsRow {
+  display: flex;
+  gap: 0.75rem;
   width: 100%;
-}
-
-.list {
-  display: grid;
-  gap: 14px;
-}
-
-.prescriptionCard {
-  border: 1px solid var(--color-neutral-200);
-  border-radius: 16px;
-  padding: 16px;
-  display: grid;
-  gap: 10px;
-  background: var(--color-surface-card, #fff);
-}
-
-.prescriptionHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
 }
 
-.prescriptionMeta {
+.filterSelect {
+  padding: 0 0.875rem;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-soft, #cbd5e1);
+  background-color: var(--color-surface-card, #ffffff);
+  color: var(--color-neutral-800);
+  font-family: inherit;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.tableResponsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-soft, #f1f5f9);
+  color: var(--color-neutral-800);
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.table th {
+  font-weight: 600;
   color: var(--color-neutral-600);
+  background-color: var(--color-surface-muted, #f8fafc);
+  text-transform: uppercase;
+  font-size: 0.725rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.table tbody tr:hover {
+  background-color: rgba(8, 145, 178, 0.03);
 }
 
 .modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.itemsSection {
+  border-top: 1px solid var(--color-neutral-200);
+  padding-top: 1rem;
+}
+
+.itemsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.itemsHeader h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.itemRow {
   display: grid;
-  gap: 14px;
+  grid-template-columns: 2fr 1fr 1fr 1fr 2fr auto;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background-color: var(--color-neutral-50);
+  border-radius: 8px;
+  border: 1px solid var(--color-neutral-200);
+}
+
+.emptyState {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-neutral-500);
+  font-size: 0.875rem;
 }
