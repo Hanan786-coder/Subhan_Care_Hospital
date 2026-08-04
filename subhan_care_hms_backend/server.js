@@ -25,12 +25,22 @@ const patientRoutes = require('./routes/patient.routes');
 const doctorRoutes = require('./routes/doctor.routes');
 const staffRoutes = require('./routes/staff.routes');
 const appointmentRoutes = require('./routes/appointment.routes');
+const consultationRoutes = require('./routes/consultation.routes');
+const prescriptionRoutes = require('./routes/prescription.routes');
+const medicalHistoryRoutes = require('./routes/medicalHistory.routes');
+const inventoryRoutes = require('./routes/inventory.routes');
+const billingRoutes = require('./routes/billing.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/consultations', consultationRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/medical-history', medicalHistoryRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
