@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import useDebounce from '@/hooks/useDebounce';
 import { getMedicalHistory, correctHistoryEntry } from '@/services/medicalHistoryService';
 import { getPatients } from '@/services/patientService';
 import { useSearchParams } from 'react-router-dom';
@@ -19,6 +20,7 @@ const MedicalHistoryPage = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
 
   // Correction Form Modal State
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
@@ -47,7 +49,7 @@ const MedicalHistoryPage = () => {
   }, [selectedPatientId]);
 
   const filteredHistory = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     return history.filter((entry) => 
       !query || 
       entry.patientId?.fullName?.toLowerCase().includes(query) || 
@@ -56,7 +58,7 @@ const MedicalHistoryPage = () => {
       entry.diagnosis?.toLowerCase().includes(query) || 
       entry.notes?.toLowerCase().includes(query)
     );
-  }, [history, search]);
+  }, [history, debouncedSearch]);
 
   const openCorrectionModal = (entry) => {
     setSelectedEntry(entry);
@@ -110,7 +112,7 @@ const MedicalHistoryPage = () => {
 
             <div style={{ flex: 1, minWidth: '260px' }}>
               <Input 
-                placeholder="Search history by diagnosis or clinical notes..." 
+                placeholder="Search by Patient Name, CNIC, Diagnosis, or Notes..." 
                 value={search} 
                 onChange={(e) => setSearch(e.target.value)} 
                 icon={<Search size={16} />} 
@@ -127,7 +129,7 @@ const MedicalHistoryPage = () => {
                 <thead>
                   <tr>
                     <th>Visit Date</th>
-                    <th>Patient Name</th>
+                    <th>Patient Name & CNIC</th>
                     <th>Casing Doctor</th>
                     <th>Diagnosis</th>
                     <th>Clinical Notes / Expiry Info</th>
@@ -140,7 +142,16 @@ const MedicalHistoryPage = () => {
                   {filteredHistory.map((entry) => (
                     <tr key={entry._id}>
                       <td>{new Date(entry.visitDate).toLocaleString()}</td>
-                      <td style={{ fontWeight: 600 }}>{entry.patientId?.fullName || 'N/A'}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 600 }}>{entry.patientId?.fullName || 'N/A'}</span>
+                          {entry.patientId?.cnic && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500)' }}>
+                              CNIC: {entry.patientId.cnic}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td>{entry.doctorId?.fullName || 'N/A'}</td>
                       <td>
                         <Badge variant="primary">{entry.diagnosis || 'Undiagnosed'}</Badge>
