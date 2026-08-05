@@ -9,12 +9,12 @@ const autoSeedIfEmpty = async () => {
     const User = require('../models/User');
     const userCount = await User.countDocuments();
     if (userCount === 0) {
-      console.log('[AI Studio] Seeding initial database records...');
+      console.log('Seeding initial database records...');
       const seedUsers = require('../seeders/seed');
       await seedUsers();
     }
   } catch (seedErr) {
-    console.warn('[AI Studio] Auto-seeding check skipped/failed:', seedErr.message);
+    console.warn('Auto-seeding check skipped:', seedErr.message);
   }
 };
 
@@ -34,7 +34,7 @@ const connectDB = async () => {
       await autoSeedIfEmpty();
       return;
     } catch (error) {
-      console.warn(`[AI Studio] MongoDB connection failed (${error.message}). Trying MongoMemoryServer fallback...`);
+      console.warn(`MongoDB connection failed (${error.message}). Trying MongoMemoryServer fallback...`);
     }
   }
 
@@ -46,10 +46,10 @@ const connectDB = async () => {
     ]);
     const uri = mongod.getUri();
     await mongoose.connect(uri);
-    console.log(`[AI Studio] MongoMemoryServer active at ${uri}`);
+    console.log(`MongoMemoryServer active at ${uri}`);
     await autoSeedIfEmpty();
   } catch (memError) {
-    console.warn(`[AI Studio] MongoMemoryServer unavailable: ${memError.message}. Running in offline mode.`);
+    console.warn(`MongoMemoryServer unavailable: ${memError.message}. Running in offline mode.`);
   }
 };
 

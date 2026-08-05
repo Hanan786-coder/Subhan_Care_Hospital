@@ -51,7 +51,7 @@ app.get('/api/health', (req, res) => {
 // Graceful Mongoose Error Handling Middleware
 app.use((err, req, res, next) => {
   if (err.name === 'MongooseError' || err.name === 'MongoNetworkError' || (err.message && err.message.includes('buffering timed out'))) {
-    console.warn('[AI Studio] Database offline error caught in middleware');
+    console.warn('Database offline error caught in middleware');
     if (req.method === 'GET') {
       return res.json(req.path.endsWith('s') || req.path.endsWith('s/') ? [] : {});
     }

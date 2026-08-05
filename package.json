@@ -1,41 +1,16 @@
 {
-  "name": "subhan_care_hms",
+  "name": "subhan_care_hms_root",
   "version": "1.0.0",
-  "description": "Subhan Care Hospital Management System",
-  "main": "server.js",
-  "type": "commonjs",
+  "description": "Root project running frontend and backend concurrently",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd subhan_care_hms_backend && npm run dev",
+    "frontend": "cd subhan_care_hms_frontend && npm run dev",
+    "serve": "node server.js",
     "build": "cd subhan_care_hms_frontend && npm run build",
-    "lint": "cd subhan_care_hms_frontend && npm run lint",
-    "seed": "node subhan_care_hms_backend/seeders/seed.js"
-  },
-  "dependencies": {
-    "axios": "^1.7.9",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.475.0",
-    "mongodb-memory-server": "^10.1.0",
-    "mongoose": "^8.10.1",
-    "morgan": "^1.10.0",
-    "nodemailer": "^6.10.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-hot-toast": "^2.5.0",
-    "react-icons": "^5.4.0",
-    "react-router-dom": "^6.28.2"
+    "lint": "cd subhan_care_hms_frontend && npm run lint"
   },
   "devDependencies": {
-    "@types/node": "^22.13.1",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
-    "nodemon": "^3.1.9",
-    "typescript": "^5.7.3",
-    "vite": "^5.4.14"
+    "concurrently": "^8.2.2"
   }
 }
