@@ -24,6 +24,12 @@
   backdrop-filter: blur(14px);
 }
 
+.sm { max-width: 24rem; }
+.md { max-width: 32rem; }
+.lg { max-width: 48rem; }
+.xl { max-width: 64rem; }
+.full { max-width: 92vw; }
+
 @media (prefers-reduced-motion: reduce) {
   .overlay { animation: none; }
   .modal { animation: none; }

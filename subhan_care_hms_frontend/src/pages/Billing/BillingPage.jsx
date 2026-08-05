@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import useDebounce from '@/hooks/useDebounce';
 import { createInvoice, getInvoices, recordPayment } from '@/services/billingService';
 import { getPatients } from '@/services/patientService';
 import { ROLES } from '@/constants/roles';
@@ -24,6 +25,7 @@ const BillingPage = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [statusFilter, setStatusFilter] = useState('');
 
   // Modals
@@ -66,7 +68,7 @@ const BillingPage = () => {
   }, [statusFilter]);
 
   const filteredInvoices = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     return invoices.filter(
       (invoice) =>
         !query ||
@@ -75,7 +77,7 @@ const BillingPage = () => {
         invoice.patientId?.fullName?.toLowerCase().includes(query) ||
         invoice.patientId?.cnic?.toLowerCase().includes(query)
     );
-  }, [invoices, search]);
+  }, [invoices, debouncedSearch]);
 
   const totalRevenue = useMemo(() => {
     return invoices.reduce((sum, invoice) => sum + (invoice.amountPaid || 0), 0);
@@ -512,7 +514,7 @@ const BillingPage = () => {
       </Modal>
 
       {/* Generate Invoice Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Generate New Invoice" size="lg">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Generate New Invoice" size="xl">
         <form onSubmit={handleSubmit} className={styles.modalForm}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
             <SearchSelect
