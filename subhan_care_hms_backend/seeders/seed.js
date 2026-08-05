@@ -56,7 +56,7 @@ const seedUsers = async () => {
       {
         userId: 'SC-USR-00005',
         name: 'Billing Staff Zara',
-        email: 'billing@gmail .com',
+        email: 'billing@gmail.com',
         passwordHash: 'billing123',
         role: 'BILLING_STAFF'
       }

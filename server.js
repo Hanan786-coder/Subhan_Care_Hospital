@@ -66,7 +66,7 @@ const frontendPath = path.resolve(__dirname, 'subhan_care_hms_frontend');
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     try {
-      const { createServer: createViteServer } = require('vite');
+      const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
