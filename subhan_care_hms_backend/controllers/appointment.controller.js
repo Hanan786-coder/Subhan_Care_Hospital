@@ -1,17 +1,76 @@
 /**
  * Appointment Controller
- * Handles booking, reschedule, conflict prevention (Feature 2.2, 2.4)
+ * Handles booking, reschedule, conflict prevention & available slots calculations
  */
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
+const User = require('../models/User');
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-const getDaySchedule = (doctor, date) => {
-  const dayName = DAY_NAMES[new Date(date).getDay()];
-  const schedule = doctor.schedule?.[dayName] || [];
-  return Array.isArray(schedule) ? schedule : [];
+const ensureDoctorLinked = async (user) => {
+  if (user && user.role === 'DOCTOR' && !user.linkedEntityId) {
+    let doc = await Doctor.findOne({
+      $or: [
+        { userId: user._id },
+        { 'contactInfo.email': user.email },
+        { fullName: new RegExp(user.name, 'i') }
+      ]
+    });
+    if (doc) {
+      user.linkedEntityId = doc._id;
+      user.entityModel = 'Doctor';
+      await User.findByIdAndUpdate(user._id, { linkedEntityId: doc._id, entityModel: 'Doctor' });
+      if (!doc.userId) {
+        doc.userId = user._id;
+        await doc.save();
+      }
+    }
+  }
+};
+
+const getDaySchedule = (doctor, dateStr) => {
+  if (!dateStr || !doctor) return [];
+
+  // Parse YYYY-MM-DD cleanly
+  const dateParts = String(dateStr).split('T')[0].split('-');
+  let d;
+  if (dateParts.length === 3) {
+    d = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
+  } else {
+    d = new Date(dateStr);
+  }
+
+  const dayName = DAY_NAMES[d.getDay()];
+
+  // Array format: [{ day: 'Monday', isWorking: true, startTime: '09:00', endTime: '17:00' }]
+  if (Array.isArray(doctor.schedule) && doctor.schedule.length > 0) {
+    const dayItem = doctor.schedule.find((s) => s.day?.toLowerCase() === dayName);
+    if (dayItem && dayItem.isWorking) {
+      return [{ start: dayItem.startTime || '09:00', end: dayItem.endTime || '17:00' }];
+    } else if (dayItem && !dayItem.isWorking) {
+      return [];
+    }
+  }
+
+  // Object format: { monday: [{ start: '09:00', end: '13:00' }] }
+  if (doctor.schedule && typeof doctor.schedule === 'object' && !Array.isArray(doctor.schedule)) {
+    const objSched = doctor.schedule[dayName];
+    if (Array.isArray(objSched) && objSched.length > 0) {
+      return objSched.map((s) => ({ start: s.start || s.startTime || '09:00', end: s.end || s.endTime || '17:00' }));
+    }
+  }
+
+  // Default standard working schedule for Mon-Sat if active doctor
+  if (dayName !== 'sunday' && doctor.status !== 'inactive') {
+    return [
+      { start: '09:00', end: '13:00' },
+      { start: '14:00', end: '17:00' }
+    ];
+  }
+
+  return [];
 };
 
 const getAvailableSlots = (doctor, date) => {
@@ -29,7 +88,9 @@ const getAvailableSlots = (doctor, date) => {
       const slotStart = `${String(Math.floor(current / 60)).padStart(2, '0')}:${String(current % 60).padStart(2, '0')}`;
       const slotEndMinutes = current + 30;
       const slotEnd = `${String(Math.floor(slotEndMinutes / 60)).padStart(2, '0')}:${String(slotEndMinutes % 60).padStart(2, '0')}`;
-      const hasConflict = existingAppointments.some((appointment) => appointment.timeSlot?.start < slotEnd && appointment.timeSlot?.end > slotStart);
+      const hasConflict = existingAppointments.some(
+        (appointment) => appointment.timeSlot?.start < slotEnd && appointment.timeSlot?.end > slotStart
+      );
       if (!hasConflict) {
         slots.push({ start: slotStart, end: slotEnd });
       }
@@ -40,15 +101,12 @@ const getAvailableSlots = (doctor, date) => {
   return slots;
 };
 
-// Feature 2.2: Conflict Prevention Helper
 const checkConflict = async (doctorId, date, start, end, excludeAppointmentId = null) => {
   const query = {
     doctorId,
     date: new Date(date),
     status: { $in: ['Scheduled', 'Rescheduled'] },
-    $or: [
-      { 'timeSlot.start': { $lt: end }, 'timeSlot.end': { $gt: start } }
-    ]
+    $or: [{ 'timeSlot.start': { $lt: end }, 'timeSlot.end': { $gt: start } }]
   };
 
   if (excludeAppointmentId) {
@@ -61,6 +119,8 @@ const checkConflict = async (doctorId, date, start, end, excludeAppointmentId = 
 
 const getAppointments = async (req, res) => {
   try {
+    await ensureDoctorLinked(req.user);
+
     const filter = {};
     if (req.query.patientId) filter.patientId = req.query.patientId;
     if (req.query.doctorId) filter.doctorId = req.query.doctorId;
@@ -75,7 +135,7 @@ const getAppointments = async (req, res) => {
     }
 
     const appointments = await Appointment.find(filter)
-      .populate('patientId', 'patientId fullName contactNumber')
+      .populate('patientId', 'patientId fullName contactNumber cnic bloodGroup')
       .populate('doctorId', 'doctorId fullName specialization consultationFee')
       .populate('createdBy', 'name role')
       .sort({ date: -1, 'timeSlot.start': -1 });
@@ -106,13 +166,11 @@ const bookAppointment = async (req, res) => {
       return res.status(409).json({ success: false, error: 'Selected time slot is not available for this doctor.' });
     }
 
-    // Check doctor availability (simplify check for slot format here)
     const isConflict = await checkConflict(doctorId, date, timeSlot.start, timeSlot.end);
     if (isConflict) {
       return res.status(409).json({ success: false, error: 'Time slot conflict detected. Please choose another slot.' });
     }
 
-    // Generate Appointment ID (simple format for demo)
     const count = await Appointment.countDocuments();
     const appointmentId = `SC-APT-${String(count + 1).padStart(5, '0')}`;
 
@@ -131,7 +189,6 @@ const bookAppointment = async (req, res) => {
   }
 };
 
-// Feature 2.4: Reschedule Flow
 const rescheduleAppointment = async (req, res) => {
   try {
     const { date, timeSlot } = req.body;
@@ -142,7 +199,6 @@ const rescheduleAppointment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
 
-    // Check for conflict excluding current appointment
     const isConflict = await checkConflict(appointment.doctorId, date, timeSlot.start, timeSlot.end, appointment._id);
     if (isConflict) {
       return res.status(409).json({ success: false, error: 'Time slot conflict detected for reschedule.' });
@@ -194,18 +250,18 @@ const completeAppointment = async (req, res) => {
 
 const getAvailableAppointmentSlots = async (req, res) => {
   try {
+    await ensureDoctorLinked(req.user);
+
     const doctor = await Doctor.findById(req.query.doctorId);
     if (!doctor) {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
     }
 
-    if (req.user.role === 'DOCTOR') {
-      if (!req.user.linkedEntityId || req.user.linkedEntityId.toString() !== doctor._id.toString()) {
-        return res.status(403).json({ success: false, error: 'Not authorized to view another doctor schedule' });
-      }
-    }
-
-    const appointments = await Appointment.find({ doctorId: req.query.doctorId, date: new Date(req.query.date), status: { $in: ['Scheduled', 'Rescheduled'] } });
+    const appointments = await Appointment.find({
+      doctorId: req.query.doctorId,
+      date: new Date(req.query.date),
+      status: { $in: ['Scheduled', 'Rescheduled'] }
+    });
     doctor.__appointments = appointments;
     const slots = getAvailableSlots(doctor, req.query.date);
 

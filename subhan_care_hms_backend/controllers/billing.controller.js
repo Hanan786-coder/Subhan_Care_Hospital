@@ -2,7 +2,7 @@ const Invoice = require('../models/Invoice');
 
 const buildId = async (model, prefix) => {
   const count = await model.countDocuments();
-  return `${prefix}${String(count + 1).padStart(5, '0')}`;
+  return `${prefix}${count + 1}`;
 };
 
 const getInvoices = async (req, res) => {
@@ -11,7 +11,7 @@ const getInvoices = async (req, res) => {
     if (req.query.patientId) filter.patientId = req.query.patientId;
     if (req.query.status) filter.status = req.query.status;
     const invoices = await Invoice.find(filter)
-      .populate('patientId', 'patientId fullName')
+      .populate('patientId', 'patientId fullName contactNumber cnic')
       .populate('appointmentId', 'appointmentId date timeSlot status')
       .populate('consultationId', 'consultationId diagnosis')
       .populate('prescriptionId', 'prescriptionId status')
@@ -24,8 +24,8 @@ const getInvoices = async (req, res) => {
 
 const createInvoice = async (req, res) => {
   try {
-    const invoiceId = await buildId(Invoice, 'SC-INVOC-');
-    const subtotal = req.body.items.reduce((sum, item) => sum + item.amount, 0);
+    const invoiceId = await buildId(Invoice, 'SC-INV-');
+    const subtotal = req.body.items.reduce((sum, item) => sum + (Number(item.amount) || Number(item.quantity * item.unitPrice)), 0);
     const discount = Number(req.body.discount || 0);
     const tax = Number(req.body.tax || 0);
     const total = subtotal - discount + tax;
@@ -59,9 +59,10 @@ const recordPayment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
     }
 
-    invoice.amountPaid = Math.min(invoice.total, Number(req.body.amountPaid ?? invoice.total));
+    const payAmount = Number(req.body.amountPaid || invoice.balanceDue || invoice.total);
+    invoice.amountPaid = Math.min(invoice.total, (invoice.amountPaid || 0) + payAmount);
     invoice.balanceDue = Math.max(invoice.total - invoice.amountPaid, 0);
-    invoice.paymentMethod = req.body.paymentMethod || invoice.paymentMethod;
+    invoice.paymentMethod = req.body.paymentMethod || invoice.paymentMethod || 'Cash';
     invoice.status = invoice.balanceDue === 0 ? 'Paid' : 'Partially Paid';
     if (invoice.status === 'Paid') {
       invoice.paidAt = new Date();

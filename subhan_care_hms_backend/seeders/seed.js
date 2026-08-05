@@ -18,7 +18,9 @@ const Invoice = require('../models/Invoice');
 
 const seedUsers = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    if (mongoose.connection.readyState !== 1 && process.env.MONGO_URI) {
+      await mongoose.connect(process.env.MONGO_URI);
+    }
 
     await User.deleteMany(); // Clear existing
 
@@ -81,6 +83,15 @@ const seedUsers = async () => {
     await Doctor.create(doctors);
 
     const doctorRecord = await Doctor.findOne({ doctorId: 'SC-DOC-00001' });
+    const doctorUser = await User.findOne({ role: 'DOCTOR' });
+    if (doctorUser && doctorRecord) {
+      doctorUser.linkedEntityId = doctorRecord._id;
+      doctorUser.entityModel = 'Doctor';
+      await doctorUser.save();
+
+      doctorRecord.userId = doctorUser._id;
+      await doctorRecord.save();
+    }
 
     // Seed Staff
     await Staff.deleteMany();
@@ -278,11 +289,15 @@ const seedUsers = async () => {
     ]);
 
     console.log('Database seeded with demo users, doctors, staff, patients, appointments, consultations, prescriptions, history, inventory, suppliers, and invoices!');
-    process.exit();
+    return true;
   } catch (error) {
-    console.error(error);
-    process.exit(1);
+    console.error('Error during database seeding:', error);
+    throw error;
   }
 };
 
-seedUsers();
+if (require.main === module) {
+  seedUsers().then(() => process.exit(0)).catch(() => process.exit(1));
+}
+
+module.exports = seedUsers;
