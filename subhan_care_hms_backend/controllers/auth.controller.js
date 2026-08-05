@@ -3,6 +3,7 @@
  * Handles user login, logout, and token generation.
  */
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 const jwt = require('jsonwebtoken');
 const { validatePasswordComplexity } = require('../utils/validators');
 
@@ -16,15 +17,16 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email }).select('+passwordHash');
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : '';
+    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
     
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ success: false, error: 'Invalid email or password. Please check your credentials.' });
     }
 
     if (user.status === 'locked') {
       if (user.lockoutUntil && user.lockoutUntil > Date.now()) {
-        return res.status(403).json({ success: false, error: 'Account locked. Try again later.' });
+        return res.status(403).json({ success: false, error: 'Account locked due to multiple failed login attempts. Try again later.' });
       } else {
         // Unlock
         user.status = 'active';
@@ -33,7 +35,7 @@ const loginUser = async (req, res) => {
         await user.save();
       }
     } else if (user.status === 'inactive') {
-      return res.status(403).json({ success: false, error: 'Account is inactive' });
+      return res.status(403).json({ success: false, error: 'Account is inactive. Please contact system administrator.' });
     }
 
     const isMatch = await user.matchPassword(password);
@@ -45,7 +47,7 @@ const loginUser = async (req, res) => {
         user.lockoutUntil = Date.now() + 15 * 60 * 1000; // 15 mins
       }
       await user.save();
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ success: false, error: 'Invalid email or password. Please check your credentials.' });
     }
 
     // Reset failed attempts on success
@@ -53,6 +55,20 @@ const loginUser = async (req, res) => {
     user.lockoutUntil = null;
     user.lastLogin = Date.now();
     await user.save();
+
+    // Log LOGIN audit event
+    try {
+      await AuditLog.create({
+        userId: user._id,
+        action: 'LOGIN',
+        affectedEntity: 'User',
+        affectedRecordId: user.userId,
+        details: { email: user.email, role: user.role },
+        ipAddress: req.ip || req.connection?.remoteAddress || '127.0.0.1'
+      });
+    } catch (auditErr) {
+      console.error('Failed to create login audit log:', auditErr.message);
+    }
 
     const token = generateToken(user._id);
 
@@ -136,14 +152,19 @@ const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Please enter your registered email address' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(404).json({ success: false, error: 'No user found with that email address' });
+      return res.status(404).json({ success: false, error: 'No account found with this registered email address' });
     }
 
     if (user.status === 'inactive') {
-      return res.status(403).json({ success: false, error: 'Account is inactive' });
+      return res.status(403).json({ success: false, error: 'Account is inactive. Please contact administrator.' });
     }
 
     // Generate a 6-digit numeric OTP for user convenience
