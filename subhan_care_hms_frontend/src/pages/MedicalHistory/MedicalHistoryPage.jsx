@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
 import { getMedicalHistory, correctHistoryEntry } from '@/services/medicalHistoryService';
 import { getPatients } from '@/services/patientService';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Filter, MessageSquareCode, PlusCircle } from 'lucide-react';
+import { Search, Filter, MessageSquareCode, PlusCircle, UserCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/constants/roles';
 import toast from 'react-hot-toast';
@@ -51,6 +51,8 @@ const MedicalHistoryPage = () => {
     return history.filter((entry) => 
       !query || 
       entry.patientId?.fullName?.toLowerCase().includes(query) || 
+      entry.patientId?.cnic?.toLowerCase().includes(query) || 
+      entry.patientId?.contactNumber?.toLowerCase().includes(query) || 
       entry.diagnosis?.toLowerCase().includes(query) || 
       entry.notes?.toLowerCase().includes(query)
     );
@@ -94,20 +96,16 @@ const MedicalHistoryPage = () => {
       <Card>
         <CardHeader>
           <div className={styles.controlsRow}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <Filter size={16} style={{ color: 'var(--color-neutral-500)' }} />
-              <select 
-                value={selectedPatientId} 
-                onChange={(e) => setSelectedPatientId(e.target.value)} 
-                className={styles.filterSelect}
-              >
-                <option value="">All Patients</option>
-                {patients.map((patient) => (
-                  <option key={patient._id} value={patient._id}>
-                    {patient.fullName}
-                  </option>
-                ))}
-              </select>
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              <SearchSelect
+                placeholder="Search & filter by Patient (Name/CNIC)..."
+                options={patients}
+                value={selectedPatientId}
+                onChange={(val) => setSelectedPatientId(val)}
+                getOptionLabel={(pat) => pat.fullName}
+                getOptionValue={(pat) => pat._id}
+                getOptionSublabel={(pat) => pat.cnic ? `CNIC: ${pat.cnic}` : pat.contactNumber || ''}
+              />
             </div>
 
             <div style={{ flex: 1, minWidth: '260px' }}>

@@ -31,6 +31,82 @@
   gap: 8px;
 }
 
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.statCard {
+  background: var(--color-neutral-0, #ffffff);
+  border: 1px solid var(--color-border-soft, #e2e8f0);
+  border-radius: var(--radius-xl, 12px);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-neutral-500);
+}
+
+.statIconBadge {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  color: var(--color-neutral-600);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.tabBtn:hover {
+  color: var(--color-primary-600);
+}
+
+.activeTabBtn {
+  color: var(--color-primary-600);
+  border-bottom-color: var(--color-primary-600);
+}
+
 .controlsRow {
   display: flex;
   gap: 0.75rem;
@@ -87,6 +163,32 @@
 
 .table tbody tr:hover {
   background-color: rgba(8, 145, 178, 0.03);
+}
+
+.supplierLinkBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary-700);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  transition: opacity var(--transition-fast);
+}
+
+.supplierLinkBtn:hover {
+  text-decoration: underline;
+  color: var(--color-primary-800);
+}
+
+.supplierLinkBtn span {
+  font-size: 0.75rem;
+  color: var(--color-neutral-500);
+  font-weight: normal;
 }
 
 .modalForm {

@@ -274,9 +274,21 @@ const DoctorsPage = () => {
   };
 
   const filteredDoctors = useMemo(() => {
-    return doctors.filter(doc => {
+    return doctors.filter((doc) => {
+      // Role constraint: Logged-in doctor only sees his own profile details
+      if (user?.role === 'DOCTOR') {
+        const isSelf =
+          (user.linkedEntityId && String(doc._id) === String(user.linkedEntityId)) ||
+          (doc.userId && String(doc.userId._id || doc.userId) === String(user._id)) ||
+          (doc.contactInfo?.email && doc.contactInfo.email.toLowerCase() === user.email?.toLowerCase()) ||
+          (doc.userId?.email && doc.userId.email.toLowerCase() === user.email?.toLowerCase());
+
+        if (!isSelf) return false;
+      }
+
       const q = debouncedSearch.toLowerCase().trim();
-      const matchesQuery = !q ||
+      const matchesQuery =
+        !q ||
         doc.fullName?.toLowerCase().includes(q) ||
         doc.doctorId?.toLowerCase().includes(q) ||
         doc.specialization?.toLowerCase().includes(q) ||
@@ -285,7 +297,7 @@ const DoctorsPage = () => {
       const matchesStatus = !statusFilter || doc.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
-  }, [doctors, debouncedSearch, statusFilter]);
+  }, [doctors, debouncedSearch, statusFilter, user]);
 
   const stats = useMemo(() => {
     const total = doctors.length;
@@ -715,7 +727,7 @@ const DoctorsPage = () => {
         <Modal
           isOpen={isScheduleModalOpen}
           onClose={() => setIsScheduleModalOpen(false)}
-          className={styles.wideModal}
+          size="lg"
           title={`Weekly Schedule & Slot Capacity — Dr. ${editingDoctor?.fullName || ''}`}
         >
           <form onSubmit={handleSaveSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '10px' }}>

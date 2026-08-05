@@ -20,6 +20,11 @@ export const updateInventoryItem = async (id, payload) => {
   return response.data;
 };
 
+export const restockInventoryItem = async (id, payload) => {
+  const response = await api.patch(`/inventory/${id}/restock`, payload);
+  return response.data;
+};
+
 export const createSupplier = async (payload) => {
   const response = await api.post('/inventory/suppliers', payload);
   return response.data;
