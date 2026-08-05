@@ -395,7 +395,7 @@ const seedUsers = async () => {
         doctorId: createdDoctors[2]._id,
         date: new Date('2026-08-05'),
         timeSlot: { start: '14:30', end: '15:00' },
-        status: 'In-Progress',
+        status: 'Scheduled',
         createdBy: createdUsers['RECEPTIONIST']._id
       },
       {
