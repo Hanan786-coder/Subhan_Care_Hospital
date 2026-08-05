@@ -36,3 +36,4 @@ lerna-debug.log*
 Subhan_Care_HMS_SRS.md
 .github
 sent_emails
+bun.lock
