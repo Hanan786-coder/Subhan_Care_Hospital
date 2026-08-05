@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner } from '@/components/ui';
+import useDebounce from '@/hooks/useDebounce';
 import { getAuditLogs } from '@/services/auditLogService';
 import { ShieldCheck, Search, Filter, Eye, Download, Calendar, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -21,6 +22,7 @@ const AuditLogsPage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' | 'asc'
@@ -49,7 +51,7 @@ const AuditLogsPage = () => {
   }, [actionFilter, entityFilter]);
 
   const filteredLogs = useMemo(() => {
-    const q = search.toLowerCase().trim();
+    const q = debouncedSearch.toLowerCase().trim();
     let result = logs.filter((log) => {
       const matchesSearch =
         !q ||

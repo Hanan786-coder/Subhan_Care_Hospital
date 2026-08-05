@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import useDebounce from '@/hooks/useDebounce';
 import { createInventoryItem, createSupplier, getInventory, getSuppliers, restockInventoryItem } from '@/services/inventoryService';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/constants/roles';
@@ -18,6 +19,7 @@ const InventoryPage = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [categoryFilter, setCategoryFilter] = useState('');
 
   // Modals
@@ -78,7 +80,7 @@ const InventoryPage = () => {
   }, []);
 
   const filteredItems = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     return items.filter((item) => {
       const matchesSearch =
         !query ||
@@ -88,10 +90,10 @@ const InventoryPage = () => {
       const matchesCategory = !categoryFilter || item.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
-  }, [items, search, categoryFilter]);
+  }, [items, debouncedSearch, categoryFilter]);
 
   const filteredSuppliers = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     return suppliers.filter(
       (sup) =>
         !query ||
@@ -100,7 +102,7 @@ const InventoryPage = () => {
         sup.phone?.toLowerCase().includes(query) ||
         sup.email?.toLowerCase().includes(query)
     );
-  }, [suppliers, search]);
+  }, [suppliers, debouncedSearch]);
 
   const getExpiryStatus = (expiryDateStr) => {
     if (!expiryDateStr) return null;
