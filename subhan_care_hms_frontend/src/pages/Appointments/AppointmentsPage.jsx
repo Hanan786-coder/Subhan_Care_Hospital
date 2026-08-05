@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import useDebounce from '@/hooks/useDebounce';
 import {
   getAppointments,
   bookAppointment,
@@ -12,7 +13,7 @@ import { getPatients } from '@/services/patientService';
 import { getDoctors } from '@/services/doctorService';
 import { ROLES } from '@/constants/roles';
 import { useAuth } from '@/context/AuthContext';
-import { CalendarDays, Search, Clock3, XCircle, RefreshCw, CheckCircle2, Filter, AlertCircle } from 'lucide-react';
+import { CalendarDays, Search, Clock3, XCircle, RefreshCw, CheckCircle2, Filter, AlertCircle, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './Appointments.module.css';
 
@@ -58,8 +59,11 @@ const AppointmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDoctorScheduleModalOpen, setIsDoctorScheduleModalOpen] = useState(false);
+  const [selectedDoctorForSchedule, setSelectedDoctorForSchedule] = useState(null);
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ patientId: '', doctorId: '', date: '', slotValue: '', start: '', end: '' });
@@ -75,6 +79,9 @@ const AppointmentsPage = () => {
       setAppointments(appointmentData.data || []);
       setPatients(patientData.data || []);
       setDoctors(doctorData.data || []);
+      if (doctorData.data?.length > 0) {
+        setSelectedDoctorForSchedule(doctorData.data[0]);
+      }
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to load appointments');
     } finally {
@@ -111,7 +118,7 @@ const AppointmentsPage = () => {
   }, [formData.doctorId, formData.date]);
 
   const filteredAppointments = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     return appointments.filter((appointment) => {
       const matchesSearch =
         !query ||
@@ -120,7 +127,7 @@ const AppointmentsPage = () => {
         appointment.doctorId?.fullName?.toLowerCase().includes(query);
       return matchesSearch;
     });
-  }, [appointments, search]);
+  }, [appointments, debouncedSearch]);
 
   const openCreateModal = () => {
     setEditingAppointment(null);
@@ -229,11 +236,16 @@ const AppointmentsPage = () => {
           <h2>Appointment Scheduling</h2>
           <p>Book new consultation sessions, reschedule timings, and view real-time doctor slot allocations.</p>
         </div>
-        {canBook && (
-          <Button variant="primary" icon={<CalendarDays size={16} />} onClick={openCreateModal}>
-            Book Appointment
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button variant="outline" icon={<Calendar size={16} />} onClick={() => setIsDoctorScheduleModalOpen(true)}>
+            Doctors' Weekly Schedule
           </Button>
-        )}
+          {canBook && (
+            <Button variant="primary" icon={<CalendarDays size={16} />} onClick={openCreateModal}>
+              Book Appointment
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className={styles.statsGrid}>
@@ -451,6 +463,97 @@ const AppointmentsPage = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Doctors Weekly Schedule Modal for Receptionist & Staff */}
+      {isDoctorScheduleModalOpen && (
+        <Modal
+          isOpen={isDoctorScheduleModalOpen}
+          onClose={() => setIsDoctorScheduleModalOpen(false)}
+          size="lg"
+          title="Doctors' Weekly Schedules & Capacity"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-neutral-700)' }}>Select Doctor</label>
+              <select
+                className={styles.filterSelect}
+                style={{ width: '100%', height: '42px' }}
+                value={selectedDoctorForSchedule?._id || ''}
+                onChange={(e) => {
+                  const doc = doctors.find(d => d._id === e.target.value);
+                  setSelectedDoctorForSchedule(doc);
+                }}
+              >
+                {doctors.map((doc) => (
+                  <option key={doc._id} value={doc._id}>
+                    {doc.fullName} ({doc.specialization}) — Fee: Rs. {doc.consultationFee}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedDoctorForSchedule ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-neutral-50)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-neutral-200)' }}>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>Dr. {selectedDoctorForSchedule.fullName}</h4>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-neutral-600)' }}>
+                      {selectedDoctorForSchedule.specialization} • {selectedDoctorForSchedule.qualification}
+                    </p>
+                  </div>
+                  <Badge variant={selectedDoctorForSchedule.status === 'active' ? 'success' : 'danger'}>
+                    {selectedDoctorForSchedule.status}
+                  </Badge>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto' }}>
+                  {(selectedDoctorForSchedule.schedule || []).length > 0 ? (
+                    selectedDoctorForSchedule.schedule.map((item) => (
+                      <div
+                        key={item.day}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--color-neutral-200)',
+                          backgroundColor: item.isWorking ? '#ffffff' : 'var(--color-neutral-50)',
+                          opacity: item.isWorking ? 1 : 0.65
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, fontSize: '0.875rem', width: '100px' }}>{item.day}</span>
+                        {item.isWorking ? (
+                          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.85rem' }}>
+                            <span><strong>Hours:</strong> {item.startTime} - {item.endTime}</span>
+                            <span><strong>Max Patients:</strong> {item.maxPatients || 20}</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--color-neutral-500)', italic: 'true' }}>
+                            Day Off / Unavailable
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-neutral-500)', textAlign: 'center', padding: '1rem' }}>
+                      Standard Monday - Saturday schedule applies (09:00 AM - 05:00 PM)
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-neutral-500)' }}>Please select a doctor to view schedule.</p>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <Button variant="ghost" onClick={() => setIsDoctorScheduleModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

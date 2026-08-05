@@ -117,7 +117,7 @@ const DoctorsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 300);
+  const debouncedSearch = useDebounce(search, 400);
   const [statusFilter, setStatusFilter] = useState('');
 
   // Modals state
@@ -732,7 +732,9 @@ const DoctorsPage = () => {
         >
           <form onSubmit={handleSaveSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '10px' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--color-neutral-600)', margin: 0 }}>
-              Configure working days, available shift times, and maximum patient capacity limit per working day.
+              {isAdmin 
+                ? "Configure working days, available shift times, and maximum patient capacity limit per working day."
+                : "Weekly consultation schedule and daily patient capacity limit for front-desk scheduling."}
             </p>
 
             <div className={styles.scheduleList}>
@@ -745,6 +747,7 @@ const DoctorsPage = () => {
                     <input
                       type="checkbox"
                       checked={item.isWorking}
+                      disabled={!isAdmin}
                       onChange={(e) => {
                         const updated = [...scheduleData];
                         updated[index].isWorking = e.target.checked;
@@ -762,6 +765,7 @@ const DoctorsPage = () => {
                           type="time"
                           className={styles.timeInput}
                           value={item.startTime}
+                          disabled={!isAdmin}
                           onChange={(e) => {
                             const updated = [...scheduleData];
                             updated[index].startTime = e.target.value;
@@ -775,6 +779,7 @@ const DoctorsPage = () => {
                           type="time"
                           className={styles.timeInput}
                           value={item.endTime}
+                          disabled={!isAdmin}
                           onChange={(e) => {
                             const updated = [...scheduleData];
                             updated[index].endTime = e.target.value;
@@ -790,6 +795,7 @@ const DoctorsPage = () => {
                           max="100"
                           className={styles.capacityInput}
                           value={item.maxPatients || 20}
+                          disabled={!isAdmin}
                           onChange={(e) => {
                             const updated = [...scheduleData];
                             updated[index].maxPatients = Number(e.target.value);
@@ -807,11 +813,13 @@ const DoctorsPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <Button type="button" variant="ghost" onClick={() => setIsScheduleModalOpen(false)}>
-                Cancel
+                {isAdmin ? 'Cancel' : 'Close'}
               </Button>
-              <Button type="submit" variant="primary" disabled={isSubmitting}>
-                {isSubmitting ? <Spinner size="sm" /> : 'Save Schedule'}
-              </Button>
+              {isAdmin && (
+                <Button type="submit" variant="primary" disabled={isSubmitting}>
+                  {isSubmitting ? <Spinner size="sm" /> : 'Save Schedule'}
+                </Button>
+              )}
             </div>
           </form>
         </Modal>
