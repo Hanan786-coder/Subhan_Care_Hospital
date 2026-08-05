@@ -7,9 +7,14 @@ const mongoose = require('mongoose');
 const autoSeedIfEmpty = async () => {
   try {
     const User = require('../models/User');
+    const Patient = require('../models/Patient');
+    const AuditLog = require('../models/AuditLog');
     const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('Seeding initial database records...');
+    const johnDoe = await Patient.findOne({ fullName: 'John Doe' });
+    const auditCount = await AuditLog.countDocuments();
+
+    if (userCount === 0 || johnDoe || auditCount === 0) {
+      console.log('Seeding initial database records with demo users, doctors, staff, patients, appointments, consultations, prescriptions, history, inventory, suppliers, and invoices!');
       const seedUsers = require('../seeders/seed');
       await seedUsers();
     }
