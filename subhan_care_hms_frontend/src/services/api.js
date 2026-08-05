@@ -51,7 +51,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
       localStorage.removeItem('sc_hms_token');
       localStorage.removeItem('sc_hms_user');
       window.location.href = '/login';
