@@ -1,0 +1,6 @@
+{
+  "name": "Subhan Care HMS",
+  "description": "Hospital Management System with multi-role access control, patient management, prescriptions, billing, and inventory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
