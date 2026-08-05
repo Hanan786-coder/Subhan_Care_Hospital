@@ -12,6 +12,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,9 +26,11 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail || !password) {
+      setErrorMsg('Please enter both email and password');
       toast.error('Please enter both email and password');
       return;
     }
@@ -37,7 +40,9 @@ const LoginPage = () => {
       await login(normalizedEmail, password, rememberMe);
       toast.success('Signed in successfully');
     } catch (error) {
-      toast.error(error.message || 'Login failed. Please check your credentials.');
+      const msg = error.message || 'Invalid email or password. Please check your credentials.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -85,6 +90,23 @@ const LoginPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
+            {errorMsg && (
+              <div style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fca5a5',
+                color: '#991b1b',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span>⚠️ {errorMsg}</span>
+              </div>
+            )}
+
             <Input
               label="Email Address"
               type="email"

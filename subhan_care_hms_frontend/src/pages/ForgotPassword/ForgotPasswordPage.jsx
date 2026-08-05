@@ -18,6 +18,8 @@ const STEPS = {
 const ForgotPasswordPage = () => {
   const [step, setStep] = useState(STEPS.EMAIL);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const navigate = useNavigate();
 
   // Form State
@@ -29,19 +31,27 @@ const ForgotPasswordPage = () => {
   // Step 1: Request Reset Token (OTP)
   const handleRequestToken = async (e) => {
     if (e) e.preventDefault();
-    if (!email) return;
+    setErrorMsg('');
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setErrorMsg('Please enter your registered email address');
+      return;
+    }
 
     try {
       setIsLoading(true);
-      const res = await forgotPassword(email);
+      const res = await forgotPassword(normalizedEmail);
       if (res.resetToken) {
-        toast.success('Reset OTP generated! Check your email or console.');
+        setGeneratedOtp(res.resetToken);
+        toast.success(`Reset OTP generated: ${res.resetToken}`);
       } else {
         toast.success(res.message || 'Verification OTP sent to your email.');
       }
       setStep(STEPS.OTP);
     } catch (error) {
-      toast.error(error.response?.data?.error || error.message || 'Failed to request reset OTP');
+      const msg = error.response?.data?.error || error.message || 'No account found with this email address';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -50,18 +60,22 @@ const ForgotPasswordPage = () => {
   // Step 2: Verify OTP Code
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     if (!otpCode) {
+      setErrorMsg('Please enter the OTP code');
       toast.error('Please enter the OTP code');
       return;
     }
 
     try {
       setIsLoading(true);
-      await verifyOtp(email, otpCode);
+      await verifyOtp(email.trim().toLowerCase(), otpCode);
       toast.success('OTP verified successfully!');
       setStep(STEPS.RESET);
     } catch (error) {
-      toast.error(error.response?.data?.error || error.message || 'Invalid or expired OTP');
+      const msg = error.response?.data?.error || error.message || 'Invalid or expired OTP code';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -70,11 +84,14 @@ const ForgotPasswordPage = () => {
   // Step 3: Reset Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     if (!newPassword || !isPasswordValid(newPassword)) {
+      setErrorMsg('Password does not meet complexity requirements (min 8 chars, uppercase, lowercase, number, symbol)');
       toast.error('Password does not meet the complexity requirements');
       return;
     }
     if (newPassword !== confirmPassword) {
+      setErrorMsg('Passwords do not match');
       toast.error('Passwords do not match');
       return;
     }
@@ -85,7 +102,9 @@ const ForgotPasswordPage = () => {
       setStep(STEPS.SUCCESS);
       toast.success('Password successfully reset!');
     } catch (error) {
-      toast.error(error.response?.data?.error || error.message || 'Failed to reset password');
+      const msg = error.response?.data?.error || error.message || 'Failed to reset password';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -124,16 +143,34 @@ const ForgotPasswordPage = () => {
             </Link>
           )}
 
+          {errorMsg && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fca5a5',
+              color: '#991b1b',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span>⚠️ {errorMsg}</span>
+            </div>
+          )}
+
           {/* STEP 1: EMAIL */}
           {step === STEPS.EMAIL && (
             <div className={fpStyles.stepContent}>
               <div className={styles.header}>
                 <h2>Forgot Password</h2>
-                <p>Enter your email to generate a secure password reset OTP</p>
+                <p>Enter your registered email address to receive a secure password reset OTP</p>
               </div>
               <form onSubmit={handleRequestToken} className={styles.form}>
                 <Input
-                  label="Email Address"
+                  label="Registered Email Address"
                   type="email"
                   placeholder="Enter your registered email"
                   value={email}
@@ -154,8 +191,24 @@ const ForgotPasswordPage = () => {
             <div className={fpStyles.stepContent}>
               <div className={styles.header}>
                 <h2>Verify OTP</h2>
-                <p>Enter the 6-digit OTP code sent to your email</p>
+                <p>Enter the 6-digit OTP code sent to {email}</p>
               </div>
+
+              {generatedOtp && (
+                <div style={{
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  color: '#1e40af',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  marginBottom: '1rem',
+                  textAlign: 'center'
+                }}>
+                  🔐 Dev Mode OTP: <strong>{generatedOtp}</strong>
+                </div>
+              )}
+
               <form onSubmit={handleVerifyOtp} className={styles.form}>
                 <Input
                   label="Verification OTP"
