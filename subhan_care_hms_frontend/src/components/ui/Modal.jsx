@@ -8,6 +8,7 @@ const Modal = memo(({
   isOpen, 
   onClose, 
   title, 
+  size = 'md',
   children, 
   className = '' 
 }) => {
@@ -21,10 +22,12 @@ const Modal = memo(({
 
   if (!isOpen) return null;
 
+  const sizeClass = styles[size] || styles.md;
+
   return (
     <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div 
-        className={`${styles.modal} ${className}`.trim()} 
+        className={`${styles.modal} ${sizeClass} ${className}`.trim()} 
         onClick={(e) => e.stopPropagation()}
       >
         {title && (

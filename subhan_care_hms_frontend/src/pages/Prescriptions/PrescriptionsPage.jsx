@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner } from '@/components/ui';
+import useDebounce from '@/hooks/useDebounce';
 import { createPrescription, dispensePrescription, getPrescriptions } from '@/services/prescriptionService';
 import { getPatients } from '@/services/patientService';
 import { getDoctors } from '@/services/doctorService';
@@ -23,6 +24,7 @@ const PrescriptionsPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,14 +61,14 @@ const PrescriptionsPage = () => {
   }, []);
 
   const filteredPrescriptions = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = debouncedSearch.toLowerCase().trim();
     return prescriptions.filter((prescription) => 
       !query || 
       prescription.prescriptionId?.toLowerCase().includes(query) || 
       prescription.patientId?.fullName?.toLowerCase().includes(query) || 
       prescription.doctorId?.fullName?.toLowerCase().includes(query)
     );
-  }, [prescriptions, search]);
+  }, [prescriptions, debouncedSearch]);
 
   const handleAddItem = () => {
     setFormData((prev) => ({
@@ -225,7 +227,7 @@ const PrescriptionsPage = () => {
         </CardBody>
       </Card>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Prescription" size="lg">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Prescription" size="xl">
         <form onSubmit={handleSubmit} className={styles.modalForm}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
