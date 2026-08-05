@@ -23,7 +23,7 @@ const getAuditLogs = async (req, res) => {
     }
 
     let logs = await AuditLog.find(query)
-      .populate('userId', 'fullName email role username')
+      .populate('userId', 'name email role userId')
       .sort({ timestamp: -1 })
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
@@ -32,11 +32,11 @@ const getAuditLogs = async (req, res) => {
     if (search) {
       const q = search.toLowerCase().trim();
       logs = logs.filter((log) => {
-        const userName = log.userId?.fullName?.toLowerCase() || '';
+        const userName = log.userId?.name?.toLowerCase() || '';
         const userEmail = log.userId?.email?.toLowerCase() || '';
         const actionStr = log.action?.toLowerCase() || '';
-        const entityStr = log.affectedEntity?.toLowerCase() || '';
-        const recordStr = String(log.affectedRecordId || '').toLowerCase();
+        const entityStr = (log.affectedEntity || log.entity || '').toLowerCase();
+        const recordStr = String(log.affectedRecordId || log.recordId || '').toLowerCase();
         const detailsStr = JSON.stringify(log.details || {}).toLowerCase();
 
         return (
@@ -50,11 +50,21 @@ const getAuditLogs = async (req, res) => {
       });
     }
 
+    const formattedLogs = logs.map((log) => {
+      const obj = log.toObject ? log.toObject() : log;
+      return {
+        ...obj,
+        createdAt: obj.timestamp || obj.createdAt || new Date(),
+        entity: obj.affectedEntity || obj.entity || 'General',
+        recordId: obj.affectedRecordId || obj.recordId || 'N/A'
+      };
+    });
+
     const total = await AuditLog.countDocuments(query);
 
     res.json({
       success: true,
-      data: logs,
+      data: formattedLogs,
       pagination: {
         total,
         page: Number(page),
