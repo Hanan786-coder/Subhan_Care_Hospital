@@ -12,21 +12,27 @@ const auditLogSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    required: true // e.g., 'CREATE', 'UPDATE', 'DELETE', 'LOGIN'
+    required: true // e.g., 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'RESTOCK'
   },
   affectedEntity: {
-    type: String,
-    required: true // e.g., 'Patient', 'Doctor'
+    type: String
+  },
+  entity: {
+    type: String
   },
   affectedRecordId: {
     type: String
   },
+  recordId: {
+    type: String
+  },
   details: {
-    type: Object // Snapshot of before/after changes
+    type: Object
   },
   ipAddress: {
-    type: String
+    type: String,
+    default: '127.0.0.1'
   }
-}, { timestamps: { createdAt: 'timestamp', updatedAt: false } }); // Immutable, no updates
+}, { timestamps: { createdAt: 'timestamp', updatedAt: false } });
 
 module.exports = mongoose.model('AuditLog', auditLogSchema);

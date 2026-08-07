@@ -128,3 +128,10 @@
 .snapshotItem { padding: 14px; border-radius: var(--radius-card); background: var(--color-neutral-50); border: 1px solid var(--color-neutral-100); }
 .snapshotItem span { display: block; font-size: 10px; color: var(--color-neutral-500); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .snapshotItem strong { color: var(--color-neutral-900); font-size: var(--font-size-sm); }
+
+.emptyStateText {
+  padding: 18px 0;
+  text-align: center;
+  color: var(--color-neutral-500);
+  font-size: 0.85rem;
+}

@@ -35,7 +35,7 @@ const createPrescription = async (req, res) => {
   try {
     await ensureDoctorLinked(req.user);
 
-    const { consultationId, appointmentId, patientId, doctorId, items, pharmacistNotes = '' } = req.body;
+    const { consultationId, appointmentId, patientId, doctorId, items, precautions = [], labTests = [], generalAdvice = '', followUpDate = '', pharmacistNotes = '' } = req.body;
 
     let validConsultationId = null;
     if (consultationId) {
@@ -55,6 +55,10 @@ const createPrescription = async (req, res) => {
       patientId,
       doctorId: docId,
       items,
+      precautions,
+      labTests,
+      generalAdvice,
+      followUpDate,
       pharmacistNotes,
       createdBy: req.user._id
     });
