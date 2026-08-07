@@ -9,6 +9,11 @@ const prescriptionItemSchema = new mongoose.Schema({
   quantity: { type: Number, default: 1 }
 }, { _id: false });
 
+const labTestSchema = new mongoose.Schema({
+  testName: { type: String, required: true },
+  instructions: { type: String }
+}, { _id: false });
+
 const prescriptionSchema = new mongoose.Schema({
   prescriptionId: {
     type: String,
@@ -18,12 +23,12 @@ const prescriptionSchema = new mongoose.Schema({
   consultationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Consultation',
-    required: true
+    required: false
   },
   appointmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Appointment',
-    required: true
+    required: false
   },
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -36,6 +41,10 @@ const prescriptionSchema = new mongoose.Schema({
     required: true
   },
   items: [prescriptionItemSchema],
+  precautions: [{ type: String }],
+  labTests: [labTestSchema],
+  generalAdvice: { type: String },
+  followUpDate: { type: String },
   pharmacistNotes: {
     type: String
   },

@@ -1,121 +1,157 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { ROLE_LABELS, ROLES, ROLE_MENU_CONFIG } from '@/constants/roles';
+import { ROLE_LABELS, ROLES } from '@/constants/roles';
 import { Card, Badge, Skeleton, Button } from '@/components/ui';
 import {
   Users, Calendar, Activity, DollarSign,
   TrendingUp, Clock, AlertTriangle, FileText,
-  Package, Plus, ShieldCheck, CheckCircle2
+  Package, Plus, ShieldCheck, CheckCircle2, ArrowRight, RefreshCw, Pill
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getPatients } from '@/services/patientService';
+import { getAppointments } from '@/services/appointmentService';
+import { getPrescriptions, dispensePrescription } from '@/services/prescriptionService';
+import { getInventory } from '@/services/inventoryService';
+import { getInvoices } from '@/services/billingService';
+import { getAuditLogs } from '@/services/auditLogService';
+import toast from 'react-hot-toast';
 import styles from './DashboardHome.module.css';
 
-const HERO_FEATURES = [
-  { title: 'Accessible by design', body: 'Clear contrast and focused pathways for every care role.' },
-  { title: 'Built for trust', body: 'Professional, calm visuals that support critical hospital operations.' },
-  { title: 'Operational clarity', body: 'See the status of care, billing, and inventory at a glance.' },
-];
-
-const StatCard = ({ title, value, icon: Icon, trend, colorClass }) => (
+const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
   <div className={styles.statCard}>
     <div className={styles.statTop}>
       <div className={`${styles.statIcon} ${styles[colorClass]}`}>
         <Icon size={20} />
       </div>
-      {trend !== undefined && (
-        <span className={`${styles.statTrend} ${trend >= 0 ? styles.trendUp : styles.trendDown}`}>
-          <TrendingUp size={12} />
-          {Math.abs(trend)}%
-        </span>
-      )}
     </div>
     <h3 className={styles.statValue}>{value}</h3>
     <p className={styles.statTitle}>{title}</p>
+    {subtitle && <span style={{ fontSize: '0.725rem', color: 'var(--color-neutral-500)', marginTop: '4px', display: 'block' }}>{subtitle}</span>}
   </div>
 );
 
-const getStatsForRole = (role) => {
-  switch (role) {
-    case ROLES.ADMIN:
-      return [
-        { title: 'Total Registered Patients', value: '1,245', icon: Users, trend: 12, colorClass: 'iconBlue' },
-        { title: "Today's Appointments", value: '42', icon: Calendar, trend: 5, colorClass: 'iconGreen' },
-        { title: 'Active Doctors', value: '18', icon: Activity, trend: 0, colorClass: 'iconPurple' },
-        { title: 'Monthly Revenue', value: 'Rs. 2.4M', icon: DollarSign, trend: 8, colorClass: 'iconOrange' },
-      ];
-    case ROLES.DOCTOR:
-      return [
-        { title: 'My Consultations Today', value: '8', icon: Users, trend: 2, colorClass: 'iconBlue' },
-        { title: 'Upcoming Appointments', value: '5', icon: Calendar, trend: 0, colorClass: 'iconGreen' },
-        { title: 'Prescriptions Issued', value: '23', icon: FileText, colorClass: 'iconPurple' },
-        { title: 'Consultations (MTD)', value: '67', icon: Activity, trend: 15, colorClass: 'iconOrange' },
-      ];
-    case ROLES.RECEPTIONIST:
-      return [
-        { title: 'New Registrations Today', value: '12', icon: Users, trend: 3, colorClass: 'iconBlue' },
-        { title: "Today's Appointments", value: '42', icon: Calendar, trend: 5, colorClass: 'iconGreen' },
-        { title: 'Checked-in Patients', value: '28', icon: Activity, colorClass: 'iconPurple' },
-        { title: 'Pending Check-ins', value: '14', icon: Clock, colorClass: 'iconOrange' },
-      ];
-    case ROLES.PHARMACIST:
-      return [
-        { title: 'Prescriptions to Dispense', value: '7', icon: FileText, colorClass: 'iconBlue' },
-        { title: 'Items in Stock', value: '342', icon: Package, trend: -2, colorClass: 'iconGreen' },
-        { title: 'Low Stock Alerts', value: '5', icon: AlertTriangle, colorClass: 'iconOrange' },
-        { title: 'Dispensed Today', value: '19', icon: Activity, trend: 10, colorClass: 'iconPurple' },
-      ];
-    case ROLES.BILLING_STAFF:
-      return [
-        { title: "Today's Revenue", value: 'Rs. 87K', icon: DollarSign, trend: 6, colorClass: 'iconGreen' },
-        { title: 'Invoices Issued', value: '15', icon: FileText, colorClass: 'iconBlue' },
-        { title: 'Pending Payments', value: '8', icon: Clock, colorClass: 'iconOrange' },
-        { title: 'Monthly Revenue', value: 'Rs. 2.4M', icon: TrendingUp, trend: 8, colorClass: 'iconPurple' },
-      ];
-    default:
-      return [];
-  }
-};
-
-const RECENT_ACTIVITIES = [
-  { id: 1, text: 'Patient SC-PAT-01245 registered by Reception desk', time: '2 min ago', type: 'info' },
-  { id: 2, text: 'Consultation completed — Dr. Ahmed Khan', time: '15 min ago', type: 'success' },
-  { id: 3, text: 'Low stock alert: Paracetamol 500mg (12 units left)', time: '1 hour ago', type: 'warning' },
-  { id: 4, text: 'Invoice #INV-3421 generated — Rs. 4,500', time: '2 hours ago', type: 'info' },
-  { id: 5, text: 'Automated encrypted database backup completed', time: '02:00 AM', type: 'success' },
-];
-
-const ROLE_FOCUS = {
-  [ROLES.DOCTOR]: [
-    'Review assigned patients',
-    'Close today\'s consultations',
-    'Finalize prescriptions',
-  ],
-  [ROLES.RECEPTIONIST]: [
-    'Register new patients',
-    'Confirm appointment slots',
-    'Keep check-ins moving',
-  ],
-  [ROLES.PHARMACIST]: [
-    'Dispense pending prescriptions',
-    'Review low-stock medicines',
-    'Update inventory receipts',
-  ],
-  [ROLES.BILLING_STAFF]: [
-    'Clear pending invoices',
-    'Record today\'s collections',
-    'Audit payment exceptions',
-  ],
-};
-
 const DashboardHome = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const stats = getStatsForRole(user?.role);
+  const [loading, setLoading] = useState(true);
+  const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+
   const roleLabel = user?.role ? ROLE_LABELS[user.role] || user.role : '';
   const isAdmin = user?.role === ROLES.ADMIN;
-  const accessibleModules = user?.role ? (ROLE_MENU_CONFIG[user.role] || []).length : 0;
-  const focusItems = ROLE_FOCUS[user?.role] || [];
+  const isDoctor = user?.role === ROLES.DOCTOR;
+  const isReceptionist = user?.role === ROLES.RECEPTIONIST;
+  const isPharmacist = user?.role === ROLES.PHARMACIST;
+  const isBilling = user?.role === ROLES.BILLING_STAFF;
 
-  if (isLoading) {
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const results = await Promise.allSettled([
+        getPatients(),
+        getAppointments(),
+        getPrescriptions(),
+        getInventory(),
+        getInvoices(),
+        isAdmin ? getAuditLogs({ limit: 8 }) : Promise.resolve({ data: [] })
+      ]);
+
+      if (results[0].status === 'fulfilled') setPatients(results[0].value.data || []);
+      if (results[1].status === 'fulfilled') setAppointments(results[1].value.data || []);
+      if (results[2].status === 'fulfilled') setPrescriptions(results[2].value.data || []);
+      if (results[3].status === 'fulfilled') setInventory(results[3].value.data || []);
+      if (results[4].status === 'fulfilled') setInvoices(results[4].value.data || []);
+      if (results[5].status === 'fulfilled') setAuditLogs(results[5].value.data || []);
+    } catch (error) {
+      toast.error('Failed to update dashboard metrics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [user?.role]);
+
+  // Derived Dynamic Analytics
+  const analytics = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Patients
+    const totalPatients = patients.length;
+    const todayPatients = patients.filter(p => p.createdAt && String(p.createdAt).startsWith(todayStr)).length;
+
+    // Appointments
+    const todayAppointments = appointments.filter(a => a.date && String(a.date).startsWith(todayStr));
+    const pendingAppointments = appointments.filter(a => a.status === 'Scheduled' || a.status === 'Rescheduled');
+    const todayCompleted = todayAppointments.filter(a => a.status === 'Completed').length;
+    
+    // Doctor-specific appointments
+    const docAppts = isDoctor
+      ? appointments.filter(a => {
+          const dId = typeof a.doctorId === 'object' ? a.doctorId?._id : a.doctorId;
+          return dId === user?.linkedEntityId;
+        })
+      : appointments;
+    const docTodayAppts = docAppts.filter(a => a.date && String(a.date).startsWith(todayStr));
+
+    // Prescriptions
+    const pendingDispense = prescriptions.filter(p => p.status === 'Issued');
+    const todayDispensed = prescriptions.filter(p => p.status === 'Dispensed' && p.dispensedAt && String(p.dispensedAt).startsWith(todayStr));
+    const docPrescriptions = isDoctor
+      ? prescriptions.filter(p => {
+          const dId = typeof p.doctorId === 'object' ? p.doctorId?._id : p.doctorId;
+          return dId === user?.linkedEntityId;
+        })
+      : prescriptions;
+
+    // Inventory
+    const lowStockItems = inventory.filter(i => Number(i.quantity) <= Number(i.reorderLevel));
+
+    // Billing / Financials
+    const totalRevenue = invoices
+      .filter(i => i.status === 'Paid' || i.status === 'Partial')
+      .reduce((sum, i) => sum + (Number(i.amountPaid) || 0), 0);
+    const todayRevenue = invoices
+      .filter(i => (i.createdAt && String(i.createdAt).startsWith(todayStr)) || (i.updatedAt && String(i.updatedAt).startsWith(todayStr)))
+      .reduce((sum, i) => sum + (Number(i.amountPaid) || 0), 0);
+    const unpaidInvoices = invoices.filter(i => i.status === 'Unpaid' || i.status === 'Partial');
+
+    return {
+      totalPatients,
+      todayPatients,
+      todayAppointments: todayAppointments.length,
+      pendingAppointments: pendingAppointments.length,
+      todayCompleted,
+      docAppts,
+      docTodayAppts,
+      pendingDispense,
+      todayDispensed: todayDispensed.length,
+      docPrescriptions,
+      totalInventory: inventory.length,
+      lowStockItems,
+      totalRevenue,
+      todayRevenue,
+      unpaidInvoices
+    };
+  }, [patients, appointments, prescriptions, inventory, invoices, user?.linkedEntityId, isDoctor]);
+
+  const handleDispenseQuick = async (rxId) => {
+    try {
+      await dispensePrescription(rxId, { pharmacistNotes: 'Quick dispense from dashboard' });
+      toast.success('Prescription dispensed');
+      loadDashboardData();
+    } catch (err) {
+      toast.error('Failed to dispense prescription');
+    }
+  };
+
+  if (isAuthLoading || loading) {
     return (
       <div className={styles.container}>
         <Skeleton variant="text" height={36} width={300} />
@@ -129,141 +165,404 @@ const DashboardHome = () => {
 
   return (
     <div className={styles.container}>
+      {/* Header Bar */}
       <div className={styles.hero}>
         <div className={styles.header}>
           <div>
-            <div className={styles.heroKicker}>Operational dashboard</div>
+            <div className={styles.heroKicker}>Active Hospital Workspace</div>
             <h1 className={styles.greeting}>
               Welcome back, {user?.name || 'User'}
             </h1>
             <p className={styles.subtitle}>
-              Logged in as <strong>{roleLabel}</strong>. You currently have access to {accessibleModules} modules in Subhan Care HMS.
+              Role: <strong>{roleLabel}</strong> • Real-time operational data overview
             </p>
           </div>
           <div className={styles.headerActions}>
-            <Badge variant="active">{user?.role}</Badge>
-            <Button variant="secondary" icon={<Plus size={16} />}>New Task</Button>
+            <Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={loadDashboardData}>
+              Refresh
+            </Button>
+            {isDoctor && (
+              <Button variant="primary" size="sm" icon={<Pill size={14} />} onClick={() => navigate('/prescriptions')}>
+                New Prescription
+              </Button>
+            )}
+            {isReceptionist && (
+              <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => navigate('/appointments')}>
+                Book Appointment
+              </Button>
+            )}
+            {isPharmacist && (
+              <Button variant="primary" size="sm" icon={<Package size={14} />} onClick={() => navigate('/inventory')}>
+                Manage Inventory
+              </Button>
+            )}
+            {isBilling && (
+              <Button variant="primary" size="sm" icon={<DollarSign size={14} />} onClick={() => navigate('/billing')}>
+                New Invoice
+              </Button>
+            )}
           </div>
-        </div>
-
-        <div className={styles.heroStrip}>
-          <div className={styles.heroMetric}>
-            <span>Role</span>
-            <strong>{roleLabel}</strong>
-          </div>
-          <div className={styles.heroMetric}>
-            <span>Access</span>
-            <strong>{accessibleModules} modules</strong>
-          </div>
-          <div className={styles.heroMetric}>
-            <span>Status</span>
-            <strong>Live workspace</strong>
-          </div>
-        </div>
-
-        <div className={styles.heroFeatures}>
-          {HERO_FEATURES.map((feature) => (
-            <div key={feature.title} className={styles.heroFeatureCard}>
-              <strong>{feature.title}</strong>
-              <p>{feature.body}</p>
-            </div>
-          ))}
         </div>
       </div>
 
+      {/* Role-Specific Metric Cards */}
       <div className={styles.statsGrid}>
-        {stats.map((stat, i) => (
-          <StatCard key={i} {...stat} />
-        ))}
+        {isAdmin && (
+          <>
+            <StatCard title="Total Patients" value={analytics.totalPatients} icon={Users} colorClass="iconBlue" subtitle={`${analytics.todayPatients} registered today`} />
+            <StatCard title="Today's Appointments" value={analytics.todayAppointments} icon={Calendar} colorClass="iconGreen" subtitle={`${analytics.todayCompleted} completed`} />
+            <StatCard title="Total Hospital Revenue" value={`Rs. ${analytics.totalRevenue.toLocaleString()}`} icon={DollarSign} colorClass="iconPurple" subtitle={`Rs. ${analytics.todayRevenue.toLocaleString()} today`} />
+            <StatCard title="Low Stock Alerts" value={analytics.lowStockItems.length} icon={AlertTriangle} colorClass="iconOrange" subtitle={`${analytics.totalInventory} total medicine items`} />
+          </>
+        )}
+
+        {isDoctor && (
+          <>
+            <StatCard title="My Appointments Today" value={analytics.docTodayAppts.length} icon={Calendar} colorClass="iconBlue" subtitle="Scheduled for today" />
+            <StatCard title="Total Consultations" value={analytics.docAppts.length} icon={Activity} colorClass="iconGreen" subtitle="Assigned to your care" />
+            <StatCard title="Prescriptions Issued" value={analytics.docPrescriptions.length} icon={FileText} colorClass="iconPurple" subtitle="Issued digital scripts" />
+            <StatCard title="Total Patients" value={analytics.totalPatients} icon={Users} colorClass="iconOrange" subtitle="Hospital database" />
+          </>
+        )}
+
+        {isReceptionist && (
+          <>
+            <StatCard title="Total Registered Patients" value={analytics.totalPatients} icon={Users} colorClass="iconBlue" subtitle={`${analytics.todayPatients} added today`} />
+            <StatCard title="Today's Appointments" value={analytics.todayAppointments} icon={Calendar} colorClass="iconGreen" subtitle={`${analytics.todayCompleted} completed`} />
+            <StatCard title="Pending Appointments" value={analytics.pendingAppointments} icon={Clock} colorClass="iconOrange" subtitle="Awaiting consultation" />
+            <StatCard title="Checked-In / Completed" value={analytics.todayCompleted} icon={CheckCircle2} colorClass="iconPurple" subtitle="Today's visits" />
+          </>
+        )}
+
+        {isPharmacist && (
+          <>
+            <StatCard title="Prescriptions to Dispense" value={analytics.pendingDispense.length} icon={FileText} colorClass="iconBlue" subtitle="Awaiting pharmacy fulfilment" />
+            <StatCard title="Dispensed Today" value={analytics.todayDispensed} icon={CheckCircle2} colorClass="iconGreen" subtitle="Successfully fulfilled" />
+            <StatCard title="Medicines in Stock" value={analytics.totalInventory} icon={Package} colorClass="iconPurple" subtitle="Total inventory records" />
+            <StatCard title="Low Stock Alerts" value={analytics.lowStockItems.length} icon={AlertTriangle} colorClass="iconOrange" subtitle="At or below reorder limit" />
+          </>
+        )}
+
+        {isBilling && (
+          <>
+            <StatCard title="Today's Collections" value={`Rs. ${analytics.todayRevenue.toLocaleString()}`} icon={DollarSign} colorClass="iconGreen" subtitle="Payments recorded today" />
+            <StatCard title="Unpaid Invoices" value={analytics.unpaidInvoices.length} icon={Clock} colorClass="iconOrange" subtitle="Outstanding balance pending" />
+            <StatCard title="Total Revenue Collected" value={`Rs. ${analytics.totalRevenue.toLocaleString()}`} icon={TrendingUp} colorClass="iconPurple" subtitle="Lifetime revenue" />
+            <StatCard title="Total Invoices" value={invoices.length} icon={FileText} colorClass="iconBlue" subtitle="Billing records generated" />
+          </>
+        )}
       </div>
 
+      {/* Main Useful Dashboard Widgets */}
       <div className={styles.grid2Col}>
-        {isAdmin ? (
+        {/* DOCTOR WIDGETS */}
+        {isDoctor && (
           <>
             <Card padding="20px">
-              <div className={styles.cardHeaderTitle}>
-                <h3>Recent Hospital Activity</h3>
-                <p>Live operational events visible to administration only.</p>
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Today's Patient Schedule</h3>
+                  <p>Appointments assigned to you for today.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/appointments')}>View All</Button>
               </div>
               <div className={styles.activityList}>
-                {RECENT_ACTIVITIES.map(item => (
-                  <div key={item.id} className={styles.activityItem}>
-                    <div className={`${styles.activityDot} ${styles['dot_' + item.type]}`} />
+                {analytics.docTodayAppts.length > 0 ? (
+                  analytics.docTodayAppts.map(app => (
+                    <div key={app._id} className={styles.activityItem}>
+                      <div className={`${styles.activityDot} ${app.status === 'Completed' ? styles.dot_success : styles.dot_info}`} />
+                      <div className={styles.activityContent}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ fontSize: '0.85rem' }}>{app.patientId?.fullName || 'Patient'}</strong>
+                          <Badge variant={app.status === 'Completed' ? 'success' : 'primary'}>{app.status}</Badge>
+                        </div>
+                        <span className={styles.activityTime}>Slot: {app.timeSlot?.start} - {app.timeSlot?.end} | ID: {app.appointmentId}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyStateText}>No appointments scheduled for today.</div>
+                )}
+              </div>
+            </Card>
+
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>My Issued Prescriptions</h3>
+                  <p>Recent prescriptions created under your account.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/prescriptions')}>View All</Button>
+              </div>
+              <div className={styles.activityList}>
+                {analytics.docPrescriptions.slice(0, 5).length > 0 ? (
+                  analytics.docPrescriptions.slice(0, 5).map(rx => (
+                    <div key={rx._id} className={styles.activityItem}>
+                      <div className={styles.activityContent}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ fontSize: '0.85rem' }}>{rx.patientId?.fullName || 'Patient'} ({rx.prescriptionId})</strong>
+                          <Badge variant={rx.status === 'Dispensed' ? 'success' : 'primary'}>{rx.status}</Badge>
+                        </div>
+                        <span className={styles.activityTime}>
+                          Issued: {new Date(rx.issuedAt).toLocaleDateString()} | {rx.items?.length || 0} medications
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyStateText}>No prescriptions issued yet.</div>
+                )}
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* PHARMACIST WIDGETS */}
+        {isPharmacist && (
+          <>
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Pending Dispense Queue</h3>
+                  <p>Prescriptions issued by doctors ready for pharmacy dispensing.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/prescriptions')}>View All</Button>
+              </div>
+              <div className={styles.activityList}>
+                {analytics.pendingDispense.slice(0, 5).length > 0 ? (
+                  analytics.pendingDispense.slice(0, 5).map(rx => (
+                    <div key={rx._id} className={styles.activityItem} style={{ alignItems: 'center' }}>
+                      <div className={styles.activityContent}>
+                        <strong style={{ fontSize: '0.85rem' }}>{rx.prescriptionId} - {rx.patientId?.fullName}</strong>
+                        <p style={{ margin: '2px 0', fontSize: '0.78rem', color: 'var(--color-neutral-600)' }}>
+                          Doctor: {rx.doctorId?.fullName} | {rx.items?.map(i => i.medicineName).join(', ')}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="secondary" onClick={() => handleDispenseQuick(rx._id)}>
+                        Dispense
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyStateText}>No pending prescriptions in queue.</div>
+                )}
+              </div>
+            </Card>
+
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Low Stock Reorder Alerts</h3>
+                  <p>Medicines requiring immediate supplier restocking.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/inventory')}>Inventory</Button>
+              </div>
+              <div className={styles.alertList}>
+                {analytics.lowStockItems.length > 0 ? (
+                  analytics.lowStockItems.map(item => (
+                    <div key={item._id} className={`${styles.alertBox} ${styles.alertWarning}`}>
+                      <AlertTriangle size={18} className={styles.alertIcon} />
+                      <div style={{ flex: 1 }}>
+                        <strong>{item.name} ({item.category})</strong>
+                        <p>Stock: {item.quantity} {item.unit} | Reorder Level: {item.reorderLevel} {item.unit}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={`${styles.alertBox} ${styles.alertSuccess}`}>
+                    <CheckCircle2 size={18} className={styles.alertIcon} />
+                    <div>
+                      <strong>Stock Levels Optimal</strong>
+                      <p>All pharmacy items are above minimum reorder thresholds.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* RECEPTIONIST WIDGETS */}
+        {isReceptionist && (
+          <>
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Today's Appointment Queue</h3>
+                  <p>Live schedule for patient check-ins and appointments.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/appointments')}>View All</Button>
+              </div>
+              <div className={styles.activityList}>
+                {appointments.slice(0, 5).length > 0 ? (
+                  appointments.slice(0, 5).map(app => (
+                    <div key={app._id} className={styles.activityItem}>
+                      <div className={`${styles.activityDot} ${app.status === 'Completed' ? styles.dot_success : styles.dot_info}`} />
+                      <div className={styles.activityContent}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ fontSize: '0.85rem' }}>{app.patientId?.fullName || 'Patient'}</strong>
+                          <Badge variant={app.status === 'Completed' ? 'success' : 'primary'}>{app.status}</Badge>
+                        </div>
+                        <span className={styles.activityTime}>
+                          Doctor: {app.doctorId?.fullName} | Slot: {app.timeSlot?.start}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyStateText}>No appointments recorded today.</div>
+                )}
+              </div>
+            </Card>
+
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Recently Registered Patients</h3>
+                  <p>Newest patient records added to the hospital directory.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/patients')}>Patients</Button>
+              </div>
+              <div className={styles.activityList}>
+                {patients.slice(0, 5).map(patient => (
+                  <div key={patient._id} className={styles.activityItem}>
                     <div className={styles.activityContent}>
-                      <p className={styles.activityText}>{item.text}</p>
-                      <span className={styles.activityTime}>{item.time}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <strong style={{ fontSize: '0.85rem' }}>{patient.fullName} ({patient.patientId})</strong>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500)' }}>CNIC: {patient.cnic || 'N/A'}</span>
+                      </div>
+                      <span className={styles.activityTime}>Gender: {patient.gender} | Contact: {patient.contactNumber}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </Card>
-
-            <Card padding="20px">
-              <div className={styles.cardHeaderTitle}>
-                <h3>System Status & Security</h3>
-                <p>Only the admin can view system-level alerts and operational risk signals.</p>
-              </div>
-              <div className={styles.alertList}>
-                <div className={`${styles.alertBox} ${styles.alertWarning}`}>
-                  <AlertTriangle size={18} className={styles.alertIcon} />
-                  <div>
-                    <strong>Inventory Alert</strong>
-                    <p>Paracetamol 500mg is below reorder threshold.</p>
-                  </div>
-                </div>
-
-                <div className={`${styles.alertBox} ${styles.alertInfo}`}>
-                  <Clock size={18} className={styles.alertIcon} />
-                  <div>
-                    <strong>Auto-Session Timeout</strong>
-                    <p>Sessions automatically terminate after 15 minutes of inactivity.</p>
-                  </div>
-                </div>
-
-                <div className={`${styles.alertBox} ${styles.alertSuccess}`}>
-                  <CheckCircle2 size={18} className={styles.alertIcon} />
-                  <div>
-                    <strong>AES-256 Cloud Backup</strong>
-                    <p>24-hour encrypted database snapshot saved securely.</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
           </>
-        ) : (
+        )}
+
+        {/* BILLING STAFF WIDGETS */}
+        {isBilling && (
           <>
             <Card padding="20px">
-              <div className={styles.cardHeaderTitle}>
-                <h3>Your Focus Today</h3>
-                <p>Concise actions aligned with your current role.</p>
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Unpaid / Outstanding Invoices</h3>
+                  <p>Invoices requiring payment processing and collection.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/billing')}>Billing Page</Button>
               </div>
-              <div className={styles.focusList}>
-                {focusItems.map((item, index) => (
-                  <div key={item} className={styles.focusItem}>
-                    <span className={styles.focusIndex}>{index + 1}</span>
-                    <span className={styles.focusText}>{item}</span>
+              <div className={styles.activityList}>
+                {analytics.unpaidInvoices.slice(0, 5).length > 0 ? (
+                  analytics.unpaidInvoices.slice(0, 5).map(inv => (
+                    <div key={inv._id} className={styles.activityItem}>
+                      <div className={styles.activityContent}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <strong style={{ fontSize: '0.85rem' }}>{inv.invoiceId} - {inv.patientId?.fullName}</strong>
+                          <Badge variant="warning">{inv.status}</Badge>
+                        </div>
+                        <span className={styles.activityTime}>
+                          Total: Rs. {inv.totalAmount?.toLocaleString()} | Paid: Rs. {inv.amountPaid?.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyStateText}>No unpaid invoices. All balances cleared!</div>
+                )}
+              </div>
+            </Card>
+
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Recent Invoices Generated</h3>
+                  <p>Latest billing transactions in the system.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/billing')}>All Invoices</Button>
+              </div>
+              <div className={styles.activityList}>
+                {invoices.slice(0, 5).map(inv => (
+                  <div key={inv._id} className={styles.activityItem}>
+                    <div className={styles.activityContent}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <strong style={{ fontSize: '0.85rem' }}>{inv.invoiceId} - {inv.patientId?.fullName}</strong>
+                        <Badge variant={inv.status === 'Paid' ? 'success' : 'warning'}>{inv.status}</Badge>
+                      </div>
+                      <span className={styles.activityTime}>
+                        Amount: Rs. {inv.totalAmount?.toLocaleString()} | Date: {new Date(inv.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             </Card>
+          </>
+        )}
+
+        {/* ADMIN WIDGETS */}
+        {isAdmin && (
+          <>
+            <Card padding="20px">
+              <div className={styles.cardHeaderTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Real-Time System Audit Trail</h3>
+                  <p>Live events and operational logs recorded across all roles.</p>
+                </div>
+                <Button size="sm" variant="ghost" icon={<ArrowRight size={14} />} onClick={() => navigate('/audit-logs')}>Audit Logs</Button>
+              </div>
+              <div className={styles.activityList}>
+                {auditLogs.length > 0 ? (
+                  auditLogs.slice(0, 6).map(log => (
+                    <div key={log._id} className={styles.activityItem}>
+                      <div className={`${styles.activityDot} ${styles.dot_info}`} />
+                      <div className={styles.activityContent}>
+                        <p className={styles.activityText}>
+                          <strong>{log.performedBy?.name || 'System'}</strong> ({log.role || 'User'}): {log.action} ({log.module})
+                        </p>
+                        <span className={styles.activityTime}>
+                          {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Just now'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={styles.emptyStateText}>No audit logs available.</div>
+                )}
+              </div>
+            </Card>
 
             <Card padding="20px">
               <div className={styles.cardHeaderTitle}>
-                <h3>Workspace Snapshot</h3>
-                <p>What your role can access right now.</p>
+                <h3>Critical Operational Alerts</h3>
+                <p>System inventory and stock alert status.</p>
               </div>
-              <div className={styles.snapshotGrid}>
-                <div className={styles.snapshotItem}>
-                  <span>Access level</span>
-                  <strong>{accessibleModules} modules</strong>
-                </div>
-                <div className={styles.snapshotItem}>
-                  <span>Mode</span>
-                  <strong>Role-aware</strong>
-                </div>
-                <div className={styles.snapshotItem}>
-                  <span>Security</span>
-                  <strong>RBAC enforced</strong>
+              <div className={styles.alertList}>
+                {analytics.lowStockItems.length > 0 ? (
+                  analytics.lowStockItems.map(item => (
+                    <div key={item._id} className={`${styles.alertBox} ${styles.alertWarning}`}>
+                      <AlertTriangle size={18} className={styles.alertIcon} />
+                      <div>
+                        <strong>Low Inventory Alert: {item.name}</strong>
+                        <p>Remaining: {item.quantity} {item.unit} (Reorder Limit: {item.reorderLevel})</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={`${styles.alertBox} ${styles.alertSuccess}`}>
+                    <CheckCircle2 size={18} className={styles.alertIcon} />
+                    <div>
+                      <strong>All Systems Nominal</strong>
+                      <p>Inventory stock levels and database operations running normally.</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className={`${styles.alertBox} ${styles.alertInfo}`}>
+                  <ShieldCheck size={18} className={styles.alertIcon} />
+                  <div>
+                    <strong>Role-Based Access Control Active</strong>
+                    <p>All endpoints and data fields protected by strict authorization rules.</p>
+                  </div>
                 </div>
               </div>
             </Card>
