@@ -252,11 +252,14 @@ const PrescriptionsPage = () => {
 
     setIsSubmitting(true);
     try {
-      await createPrescription(formData);
-      toast.success('Prescription created & inventory deducted successfully!');
+      const res = await createPrescription(formData);
+      toast.success('Prescription created successfully!');
       setIsModalOpen(false);
       setFormData(getInitialFormState(user?.linkedEntityId));
       fetchData();
+      if (res?.data) {
+        openPrintModal(res.data);
+      }
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to save prescription');
     } finally {

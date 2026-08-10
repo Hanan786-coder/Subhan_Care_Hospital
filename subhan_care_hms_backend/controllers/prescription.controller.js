@@ -107,7 +107,11 @@ const createPrescription = async (req, res) => {
       itemsCount: items.length
     });
 
-    res.status(201).json({ success: true, data: prescription });
+    const populatedPrescription = await Prescription.findById(prescription._id)
+      .populate('patientId', 'patientId fullName contactNumber cnic gender dateOfBirth age')
+      .populate('doctorId', 'doctorId fullName specialization qualification department contactInfo');
+
+    res.status(201).json({ success: true, data: populatedPrescription || prescription });
   } catch (error) {
     res.status(500).json({ success: false, error: formatErrorMessage(error) });
   }
