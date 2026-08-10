@@ -242,11 +242,19 @@ const PrescriptionsPage = () => {
         inv => inv._id === item.inventoryItemId || inv.name.toLowerCase() === item.medicineName.trim().toLowerCase()
       );
 
-      if (matchedInv) {
-        if (reqQty > matchedInv.quantityInStock) {
-          toast.error(`Requested quantity (${reqQty}) for "${matchedInv.name}" exceeds available stock (${matchedInv.quantityInStock} units)`);
-          return;
-        }
+      if (!matchedInv) {
+        toast.error(`Medicine "${item.medicineName}" is not available in hospital inventory. Please select an available medicine from stock.`);
+        return;
+      }
+
+      if (matchedInv.quantityInStock <= 0 || matchedInv.status === 'Out of Stock') {
+        toast.error(`Medicine "${matchedInv.name}" is currently out of stock.`);
+        return;
+      }
+
+      if (reqQty > matchedInv.quantityInStock) {
+        toast.error(`Requested quantity (${reqQty}) for "${matchedInv.name}" exceeds available stock (${matchedInv.quantityInStock} units)`);
+        return;
       }
     }
 

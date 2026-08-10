@@ -101,20 +101,50 @@ const getAvailableSlots = (doctor, date) => {
   return slots;
 };
 
-const checkConflict = async (doctorId, date, start, end, excludeAppointmentId = null) => {
-  const query = {
+const checkConflict = async (doctorId, date, start, end, excludeAppointmentId = null, patientId = null) => {
+  const targetDate = new Date(date);
+  const startOfDay = new Date(targetDate);
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const endOfDay = new Date(targetDate);
+  endOfDay.setUTCHours(23, 59, 59, 999);
+
+  // Check Doctor Conflict
+  const docQuery = {
     doctorId,
-    date: new Date(date),
+    date: { $gte: startOfDay, $lte: endOfDay },
     status: { $in: ['Scheduled', 'Rescheduled'] },
     $or: [{ 'timeSlot.start': { $lt: end }, 'timeSlot.end': { $gt: start } }]
   };
 
   if (excludeAppointmentId) {
-    query._id = { $ne: excludeAppointmentId };
+    docQuery._id = { $ne: excludeAppointmentId };
   }
 
-  const conflictingAppt = await Appointment.findOne(query);
-  return !!conflictingAppt;
+  const conflictingDocAppt = await Appointment.findOne(docQuery);
+  if (conflictingDocAppt) {
+    return { conflict: true, message: 'Doctor already has an appointment booked at this time slot.' };
+  }
+
+  // Check Patient Conflict
+  if (patientId) {
+    const patientQuery = {
+      patientId,
+      date: { $gte: startOfDay, $lte: endOfDay },
+      status: { $in: ['Scheduled', 'Rescheduled'] },
+      $or: [{ 'timeSlot.start': { $lt: end }, 'timeSlot.end': { $gt: start } }]
+    };
+
+    if (excludeAppointmentId) {
+      patientQuery._id = { $ne: excludeAppointmentId };
+    }
+
+    const conflictingPatientAppt = await Appointment.findOne(patientQuery);
+    if (conflictingPatientAppt) {
+      return { conflict: true, message: 'Patient already has an appointment booked in this time slot.' };
+    }
+  }
+
+  return { conflict: false };
 };
 
 const getAppointments = async (req, res) => {
@@ -160,15 +190,13 @@ const bookAppointment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
     }
 
-    const availableSlots = getAvailableSlots(doctor, date);
-    const isSlotAllowed = availableSlots.some((slot) => slot.start === timeSlot.start && slot.end === timeSlot.end);
-    if (!isSlotAllowed) {
-      return res.status(409).json({ success: false, error: 'Selected time slot is not available for this doctor.' });
+    if (doctor.status === 'inactive') {
+      return res.status(400).json({ success: false, error: 'Selected doctor is currently inactive.' });
     }
 
-    const isConflict = await checkConflict(doctorId, date, timeSlot.start, timeSlot.end);
-    if (isConflict) {
-      return res.status(409).json({ success: false, error: 'Time slot conflict detected. Please choose another slot.' });
+    const conflictResult = await checkConflict(doctorId, date, timeSlot.start, timeSlot.end, null, patientId);
+    if (conflictResult.conflict) {
+      return res.status(409).json({ success: false, error: conflictResult.message });
     }
 
     const count = await Appointment.countDocuments();
@@ -199,9 +227,9 @@ const rescheduleAppointment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
 
-    const isConflict = await checkConflict(appointment.doctorId, date, timeSlot.start, timeSlot.end, appointment._id);
-    if (isConflict) {
-      return res.status(409).json({ success: false, error: 'Time slot conflict detected for reschedule.' });
+    const conflictResult = await checkConflict(appointment.doctorId, date, timeSlot.start, timeSlot.end, appointment._id, appointment.patientId);
+    if (conflictResult.conflict) {
+      return res.status(409).json({ success: false, error: conflictResult.message });
     }
 
     appointment.date = new Date(date);
@@ -252,18 +280,25 @@ const getAvailableAppointmentSlots = async (req, res) => {
   try {
     await ensureDoctorLinked(req.user);
 
-    const doctor = await Doctor.findById(req.query.doctorId);
+    const { doctorId, date } = req.query;
+    const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
     }
 
+    const targetDate = new Date(date);
+    const startOfDay = new Date(targetDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
     const appointments = await Appointment.find({
-      doctorId: req.query.doctorId,
-      date: new Date(req.query.date),
+      doctorId,
+      date: { $gte: startOfDay, $lte: endOfDay },
       status: { $in: ['Scheduled', 'Rescheduled'] }
     });
     doctor.__appointments = appointments;
-    const slots = getAvailableSlots(doctor, req.query.date);
+    const slots = getAvailableSlots(doctor, date);
 
     res.json({ success: true, data: slots });
   } catch (error) {

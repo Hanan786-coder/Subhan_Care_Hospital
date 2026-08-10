@@ -103,13 +103,13 @@ const AppointmentsPage = () => {
       setLoadingSlots(true);
       try {
         const response = await getAvailableAppointmentSlots({ doctorId: formData.doctorId, date: formData.date });
-        if (response.data && response.data.length > 0) {
+        if (response.data && Array.isArray(response.data)) {
           setSlots(response.data);
         } else {
-          setSlots(DEFAULT_SLOTS);
+          setSlots([]);
         }
       } catch (error) {
-        setSlots(DEFAULT_SLOTS);
+        setSlots([]);
       } finally {
         setLoadingSlots(false);
       }
@@ -444,7 +444,7 @@ const AppointmentsPage = () => {
           <SearchSelect
             label="Select Available Time Slot (Merged Single Searchable Input)"
             required
-            placeholder={loadingSlots ? 'Loading doctor slots...' : 'Search & select time slot (e.g. 09:00 - 09:30)...'}
+            placeholder={loadingSlots ? 'Loading doctor slots...' : formattedSlotsOptions.length === 0 ? 'No slots available for this date' : 'Search & select time slot (e.g. 09:00 - 09:30)...'}
             options={formattedSlotsOptions}
             value={formData.slotValue}
             onChange={handleSlotSelect}
@@ -452,6 +452,11 @@ const AppointmentsPage = () => {
             getOptionValue={(opt) => opt.value}
             getOptionSublabel={(opt) => opt.sublabel}
           />
+          {formData.doctorId && formData.date && !loadingSlots && formattedSlotsOptions.length === 0 && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-danger-600)', padding: '8px 12px', backgroundColor: 'var(--color-danger-50)', borderRadius: '6px', border: '1px solid var(--color-danger-200)', marginTop: '-8px' }}>
+              ⚠️ No available time slots for this doctor on the selected date (All slots booked or doctor is off-duty).
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>

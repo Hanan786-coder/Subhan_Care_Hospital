@@ -67,6 +67,34 @@ const createPrescription = async (req, res) => {
       }
     }
 
+    // Validate that prescribed medicines exist in hospital inventory and have stock
+    for (const item of items) {
+      if (!item.medicineName) continue;
+      let inventoryItem = null;
+      if (item.inventoryItemId && mongoose.Types.ObjectId.isValid(item.inventoryItemId)) {
+        inventoryItem = await InventoryItem.findById(item.inventoryItemId);
+      }
+      if (!inventoryItem) {
+        inventoryItem = await InventoryItem.findOne({
+          name: new RegExp(`^${item.medicineName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+        });
+      }
+
+      if (!inventoryItem) {
+        return res.status(400).json({
+          success: false,
+          error: `Medicine "${item.medicineName}" is not available in hospital inventory.`
+        });
+      }
+
+      if (inventoryItem.quantityInStock <= 0 || inventoryItem.status === 'Out of Stock') {
+        return res.status(400).json({
+          success: false,
+          error: `Medicine "${inventoryItem.name}" is currently out of stock in hospital inventory.`
+        });
+      }
+    }
+
 
     const docId = doctorId || (req.user.role === 'DOCTOR' ? req.user.linkedEntityId : null);
     const prescriptionId = await buildId(Prescription, 'SC-RX-');
