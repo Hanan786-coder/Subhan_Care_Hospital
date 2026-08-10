@@ -98,7 +98,7 @@ const DashboardHome = () => {
           return dId === user?.linkedEntityId;
         })
       : appointments;
-    const docTodayAppts = docAppts.filter(a => a.date && String(a.date).startsWith(todayStr) && (a.status !== 'Cancelled'));
+    const docTodayAppts = docAppts.filter(a => a.date && String(a.date).startsWith(todayStr));
 
     // Prescriptions
     const pendingDispense = prescriptions.filter(p => p.status === 'Issued');

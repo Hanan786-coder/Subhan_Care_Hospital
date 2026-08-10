@@ -27,8 +27,35 @@ const validatePasswordComplexity = (password) => {
   return re.test(password);
 };
 
+const formatErrorMessage = (error) => {
+  if (!error) return 'An unexpected error occurred';
+  if (typeof error === 'string') return error;
+
+  if (error.name === 'CastError') {
+    return `Invalid format provided for ${error.path || 'reference ID'}`;
+  }
+
+  if (error.name === 'ValidationError') {
+    const messages = Object.values(error.errors || {}).map(e => e.message);
+    return messages.length > 0 ? messages.join(', ') : 'Validation failed for submitted data';
+  }
+
+  if (error.code === 11000) {
+    const keys = Object.keys(error.keyPattern || {});
+    return `A record with this ${keys.join(', ') || 'field'} already exists`;
+  }
+
+  if (error.message && error.message.includes('Cast to ObjectId failed')) {
+    return 'Invalid reference ID format provided';
+  }
+
+  return error.message || 'An internal error occurred while processing the request';
+};
+
 module.exports = {
   formatCNIC,
   validateEmail,
-  validatePasswordComplexity
+  validatePasswordComplexity,
+  formatErrorMessage
 };
+

@@ -49,6 +49,17 @@ app.get('/', (req, res) => {
   res.send('Subhan Care HMS API is running...');
 });
 
+// Global Error Handler Middleware
+const { formatErrorMessage } = require('./utils/validators');
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err);
+  const cleanMsg = formatErrorMessage(err);
+  res.status(err.status || 500).json({
+    success: false,
+    error: cleanMsg
+  });
+});
+
 // Port configuration
 const PORT = process.env.PORT || 5000;
 

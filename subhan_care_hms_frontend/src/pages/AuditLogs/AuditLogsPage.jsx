@@ -25,6 +25,8 @@ const AuditLogsPage = () => {
   const debouncedSearch = useDebounce(search, 400);
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' | 'asc'
 
   // Inspector Modal
@@ -36,7 +38,9 @@ const AuditLogsPage = () => {
     try {
       const response = await getAuditLogs({
         action: actionFilter || undefined,
-        entity: entityFilter || undefined
+        entity: entityFilter || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined
       });
       setLogs(response.data || []);
     } catch (error) {
@@ -48,7 +52,15 @@ const AuditLogsPage = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, [actionFilter, entityFilter]);
+  }, [actionFilter, entityFilter, startDate, endDate]);
+
+  const clearFilters = () => {
+    setActionFilter('');
+    setEntityFilter('');
+    setStartDate('');
+    setEndDate('');
+    setSearch('');
+  };
 
   const filteredLogs = useMemo(() => {
     const q = debouncedSearch.toLowerCase().trim();
@@ -139,6 +151,28 @@ const AuditLogsPage = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-600)', fontWeight: 500 }}>From:</span>
+                <input
+                  type="date"
+                  className={styles.filterSelect}
+                  style={{ padding: '6px 10px' }}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-600)', fontWeight: 500 }}>To:</span>
+                <input
+                  type="date"
+                  className={styles.filterSelect}
+                  style={{ padding: '6px 10px' }}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+
               <select
                 className={styles.filterSelect}
                 value={actionFilter}
@@ -150,6 +184,7 @@ const AuditLogsPage = () => {
                 <option value="DELETE">DELETE</option>
                 <option value="POST">POST</option>
                 <option value="RESTOCK">RESTOCK</option>
+                <option value="INVENTORY_DEDUCTION">DEDUCTION</option>
                 <option value="LOGIN">LOGIN</option>
               </select>
 
@@ -164,7 +199,7 @@ const AuditLogsPage = () => {
                 <option value="Appointment">Appointment</option>
                 <option value="Consultation">Consultation</option>
                 <option value="Prescription">Prescription</option>
-                <option value="Inventory">Inventory</option>
+                <option value="InventoryItem">Inventory</option>
                 <option value="Invoice">Invoice</option>
                 <option value="Staff">Staff</option>
               </select>
@@ -177,6 +212,12 @@ const AuditLogsPage = () => {
                 <option value="desc">Newest First</option>
                 <option value="asc">Oldest First</option>
               </select>
+
+              {(actionFilter || entityFilter || startDate || endDate || search) && (
+                <Button size="sm" variant="ghost" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

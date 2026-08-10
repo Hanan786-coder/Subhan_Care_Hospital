@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { PUBLIC_ROUTES, PRIVATE_ROUTES } from '@/constants/routes';
@@ -42,6 +42,7 @@ const LoginPage = () => {
     } catch (error) {
       const msg = error.message || 'Invalid email or password. Please check your credentials.';
       setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

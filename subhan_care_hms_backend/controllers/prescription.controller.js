@@ -1,9 +1,14 @@
+const mongoose = require('mongoose');
 const Prescription = require('../models/Prescription');
 const Consultation = require('../models/Consultation');
+const Appointment = require('../models/Appointment');
 const MedicalHistory = require('../models/MedicalHistory');
 const Invoice = require('../models/Invoice');
 const Doctor = require('../models/Doctor');
 const User = require('../models/User');
+const InventoryItem = require('../models/InventoryItem');
+const { logAuditEvent } = require('../middleware/auditLog');
+const { formatErrorMessage } = require('../utils/validators');
 
 const buildId = async (model, prefix) => {
   const count = await model.countDocuments();
@@ -35,23 +40,87 @@ const createPrescription = async (req, res) => {
   try {
     await ensureDoctorLinked(req.user);
 
-    const { consultationId, appointmentId, patientId, doctorId, items, precautions = [], labTests = [], generalAdvice = '', followUpDate = '', pharmacistNotes = '' } = req.body;
+    const { consultationId, appointmentId, patientId, doctorId, items = [], precautions = [], labTests = [], generalAdvice = '', followUpDate = '', pharmacistNotes = '' } = req.body;
 
+    // Safely lookup consultation reference without throwing CastError on custom string codes
     let validConsultationId = null;
     if (consultationId) {
-      const consultation = await Consultation.findById(consultationId);
+      let consultation = null;
+      if (mongoose.Types.ObjectId.isValid(consultationId)) {
+        consultation = await Consultation.findById(consultationId);
+      } else {
+        consultation = await Consultation.findOne({ consultationId });
+      }
       if (consultation) {
         validConsultationId = consultation._id;
       }
     }
 
-    const docId = doctorId || (req.user.role === 'DOCTOR' ? req.user.linkedEntityId : null);
+    // Safely lookup appointment reference
+    let validAppointmentId = null;
+    if (appointmentId) {
+      if (mongoose.Types.ObjectId.isValid(appointmentId)) {
+        validAppointmentId = appointmentId;
+      } else {
+        const appt = await Appointment.findOne({ appointmentId });
+        if (appt) validAppointmentId = appt._id;
+      }
+    }
 
+    // Deduct inventory stock for prescribed medicines & log audit
+    for (const item of items) {
+      if (!item.medicineName) continue;
+      const requestedQty = Number(item.quantity) || 1;
+
+      let inventoryItem = null;
+      if (item.inventoryItemId && mongoose.Types.ObjectId.isValid(item.inventoryItemId)) {
+        inventoryItem = await InventoryItem.findById(item.inventoryItemId);
+      }
+      if (!inventoryItem) {
+        inventoryItem = await InventoryItem.findOne({
+          name: new RegExp(`^${item.medicineName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+        });
+      }
+
+      if (inventoryItem) {
+        if (inventoryItem.quantityInStock < requestedQty) {
+          return res.status(400).json({
+            success: false,
+            error: `Insufficient stock for "${inventoryItem.name}". Available stock: ${inventoryItem.quantityInStock}, requested: ${requestedQty}`
+          });
+        }
+
+        // Deduct stock
+        const previousQty = inventoryItem.quantityInStock;
+        inventoryItem.quantityInStock -= requestedQty;
+
+        if (inventoryItem.quantityInStock === 0) {
+          inventoryItem.status = 'Out of Stock';
+        } else if (inventoryItem.quantityInStock <= inventoryItem.reorderThreshold) {
+          inventoryItem.status = 'Low Stock';
+        } else {
+          inventoryItem.status = 'Available';
+        }
+
+        await inventoryItem.save();
+
+        // Audit log inventory deduction
+        await logAuditEvent(req, 'INVENTORY_DEDUCTION', 'InventoryItem', inventoryItem._id, {
+          medicineName: inventoryItem.name,
+          deductedQuantity: requestedQty,
+          previousStock: previousQty,
+          remainingStock: inventoryItem.quantityInStock
+        });
+      }
+    }
+
+    const docId = doctorId || (req.user.role === 'DOCTOR' ? req.user.linkedEntityId : null);
     const prescriptionId = await buildId(Prescription, 'SC-RX-');
+
     const prescription = await Prescription.create({
       prescriptionId,
       consultationId: validConsultationId,
-      appointmentId: appointmentId || null,
+      appointmentId: validAppointmentId,
       patientId,
       doctorId: docId,
       items,
@@ -78,9 +147,15 @@ const createPrescription = async (req, res) => {
       );
     }
 
+    await logAuditEvent(req, 'CREATE', 'Prescription', prescription._id, {
+      prescriptionId: prescription.prescriptionId,
+      patientId,
+      itemsCount: items.length
+    });
+
     res.status(201).json({ success: true, data: prescription });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: formatErrorMessage(error) });
   }
 };
 
@@ -101,14 +176,14 @@ const getPrescriptions = async (req, res) => {
     }
 
     const prescriptions = await Prescription.find(filter)
-      .populate('patientId', 'patientId fullName contactNumber cnic')
-      .populate('doctorId', 'doctorId fullName specialization')
+      .populate('patientId', 'patientId fullName contactNumber cnic gender dateOfBirth age')
+      .populate('doctorId', 'doctorId fullName specialization qualification department contactInfo')
       .populate('appointmentId', 'appointmentId date timeSlot status')
       .populate('consultationId', 'consultationId diagnosis notes')
       .sort({ issuedAt: -1 });
     res.json({ success: true, data: prescriptions });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: formatErrorMessage(error) });
   }
 };
 
@@ -134,11 +209,17 @@ const dispensePrescription = async (req, res) => {
       await invoice.save();
     }
 
+    await logAuditEvent(req, 'UPDATE', 'Prescription', prescription._id, {
+      prescriptionId: prescription.prescriptionId,
+      status: 'Dispensed'
+    });
+
     res.json({ success: true, data: prescription });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: formatErrorMessage(error) });
   }
 };
+
 
 module.exports = {
   createPrescription,
