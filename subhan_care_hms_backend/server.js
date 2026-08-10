@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 
 // Initialize Express app
 const app = express();
+app.set('trust proxy', true);
 
 // Connect to database
 connectDB();

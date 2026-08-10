@@ -4,6 +4,20 @@
  */
 const AuditLog = require('../models/AuditLog');
 
+const getClientIp = (req) => {
+  if (!req) return '127.0.0.1';
+  let ip = req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || req.ip || req.connection?.remoteAddress || '127.0.0.1';
+  if (typeof ip === 'string') {
+    if (ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
+    }
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+  }
+  return ip || '127.0.0.1';
+};
+
 const logAuditEvent = async (req, action, entity, recordId, details = {}) => {
   try {
     if (req && req.user) {
@@ -13,7 +27,7 @@ const logAuditEvent = async (req, action, entity, recordId, details = {}) => {
         affectedEntity: entity,
         affectedRecordId: recordId ? String(recordId) : 'N/A',
         details,
-        ipAddress: req.ip || req.connection?.remoteAddress || '127.0.0.1'
+        ipAddress: getClientIp(req)
       });
     }
   } catch (error) {
@@ -36,7 +50,7 @@ const auditLogger = (entity) => {
               userId: req.user._id,
               action: action,
               affectedEntity: entity,
-              ipAddress: req.ip || '127.0.0.1',
+              ipAddress: getClientIp(req),
               affectedRecordId: req.params.id || 'new_record',
               details: { url: req.originalUrl, method: req.method }
             });
