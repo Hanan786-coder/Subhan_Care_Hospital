@@ -1,29 +1,15 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { ROLE_LABELS, ROLES } from '@/constants/roles';
-import { Menu, Bell, ChevronRight, Shield, Check, ChevronDown, PanelLeftClose, PanelLeftOpen, MoonStar, SunMedium } from 'lucide-react';
+import { ROLE_LABELS} from '@/constants/roles';
+import { Menu, Bell, PanelLeftClose, PanelLeftOpen, MoonStar, SunMedium } from 'lucide-react';
 import styles from './Navbar.module.css';
 
 const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   const { user, switchRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsRoleDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const breadcrumbs = useMemo(() => {
     const paths = location.pathname.split('/').filter(p => p);
     return paths.map(path =>
@@ -53,11 +39,6 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
     hour12: true
   });
 
-  const handleRoleSelect = (roleKey) => {
-    switchRole(roleKey);
-    setIsRoleDropdownOpen(false);
-  };
-
   return (
     <header className={styles.navbar}>
       <div className={styles.left}>
@@ -84,37 +65,6 @@ const Navbar = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
         <div className={styles.dateTimeBlock}>
           <span className={styles.navDate}>{formattedDate}</span>
           <span className={styles.navTime}>{formattedTime}</span>
-        </div>
-
-        <div className={styles.roleSwitcherContainer} ref={dropdownRef}>
-          <button
-            className={styles.rolePickerBtn}
-            onClick={() => setIsRoleDropdownOpen(prev => !prev)}
-            title="Switch preview role"
-          >
-            <Shield size={14} className={styles.roleIcon} />
-            <span className={styles.rolePickerText}>{currentRoleLabel}</span>
-            <ChevronDown size={14} />
-          </button>
-
-          {isRoleDropdownOpen && (
-            <div className={styles.roleMenu}>
-              <div className={styles.roleMenuHeader}>Switch role</div>
-              {Object.keys(ROLES).map(roleKey => {
-                const isSelected = user?.role === roleKey;
-                return (
-                  <button
-                    key={roleKey}
-                    className={`${styles.roleMenuItem} ${isSelected ? styles.roleMenuItemActive : ''}`}
-                    onClick={() => handleRoleSelect(roleKey)}
-                  >
-                    <span>{ROLE_LABELS[roleKey]}</span>
-                    {isSelected && <Check size={14} color="var(--color-primary-500)" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         <button
