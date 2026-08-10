@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/', authorize('ADMIN', 'DOCTOR', 'PHARMACIST'), getPrescriptions);
-router.post('/', authorize('DOCTOR'), auditLogger('Prescription'), createPrescription);
+router.get('/', authorize('ADMIN', 'DOCTOR', 'PHARMACIST', 'RECEPTIONIST'), getPrescriptions);
+router.post('/', authorize('DOCTOR', 'ADMIN'), auditLogger('Prescription'), createPrescription);
 router.put('/:id/dispense', authorize('ADMIN', 'PHARMACIST'), auditLogger('Prescription'), dispensePrescription);
 
 module.exports = router;

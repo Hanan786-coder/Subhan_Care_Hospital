@@ -67,52 +67,6 @@ const createPrescription = async (req, res) => {
       }
     }
 
-    // Deduct inventory stock for prescribed medicines & log audit
-    for (const item of items) {
-      if (!item.medicineName) continue;
-      const requestedQty = Number(item.quantity) || 1;
-
-      let inventoryItem = null;
-      if (item.inventoryItemId && mongoose.Types.ObjectId.isValid(item.inventoryItemId)) {
-        inventoryItem = await InventoryItem.findById(item.inventoryItemId);
-      }
-      if (!inventoryItem) {
-        inventoryItem = await InventoryItem.findOne({
-          name: new RegExp(`^${item.medicineName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
-        });
-      }
-
-      if (inventoryItem) {
-        if (inventoryItem.quantityInStock < requestedQty) {
-          return res.status(400).json({
-            success: false,
-            error: `Insufficient stock for "${inventoryItem.name}". Available stock: ${inventoryItem.quantityInStock}, requested: ${requestedQty}`
-          });
-        }
-
-        // Deduct stock
-        const previousQty = inventoryItem.quantityInStock;
-        inventoryItem.quantityInStock -= requestedQty;
-
-        if (inventoryItem.quantityInStock === 0) {
-          inventoryItem.status = 'Out of Stock';
-        } else if (inventoryItem.quantityInStock <= inventoryItem.reorderThreshold) {
-          inventoryItem.status = 'Low Stock';
-        } else {
-          inventoryItem.status = 'Available';
-        }
-
-        await inventoryItem.save();
-
-        // Audit log inventory deduction
-        await logAuditEvent(req, 'INVENTORY_DEDUCTION', 'InventoryItem', inventoryItem._id, {
-          medicineName: inventoryItem.name,
-          deductedQuantity: requestedQty,
-          previousStock: previousQty,
-          remainingStock: inventoryItem.quantityInStock
-        });
-      }
-    }
 
     const docId = doctorId || (req.user.role === 'DOCTOR' ? req.user.linkedEntityId : null);
     const prescriptionId = await buildId(Prescription, 'SC-RX-');
