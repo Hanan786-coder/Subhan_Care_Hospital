@@ -42,7 +42,6 @@ const LoginPage = () => {
     } catch (error) {
       const msg = error.message || 'Invalid email or password. Please check your credentials.';
       setErrorMsg(msg);
-      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

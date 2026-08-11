@@ -42,7 +42,7 @@ const seedUsers = async () => {
     const users = [
       {
         userId: 'SC-USR-00001',
-        name: 'Usman Chaudhry (Admin)',
+        name: 'Abdul Hanan (Admin)',
         email: 'admin@gmail.com',
         passwordHash: 'admin123',
         role: 'ADMIN'
@@ -499,7 +499,7 @@ const seedUsers = async () => {
         items: [
           { type: 'Consultation', description: 'Neurology Consultation Fee (Dr. Muhammad Tariq Khan)', quantity: 1, unitPrice: 2500, amount: 2500 }
         ],
-        paymentMethod: 'Unpaid',
+        paymentMethod: 'Cash',
         status: 'Unpaid',
         subtotal: 2500,
         discount: 0,

@@ -683,7 +683,7 @@ const PrescriptionsPage = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" loading={isSubmitting}>Issue Prescription & Deduct Stock</Button>
+            <Button type="submit" variant="primary" loading={isSubmitting}>Issue Prescription</Button>
           </div>
         </form>
       </Modal>
