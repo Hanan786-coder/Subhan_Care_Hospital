@@ -1,0 +1,247 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn var(--transition-base) ease-out;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.headerTitle h2 {
+  color: var(--color-neutral-900);
+  font-size: 1.625rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.headerTitle p {
+  color: var(--color-neutral-600);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rangeSelect {
+  padding: 0 0.875rem;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-soft);
+  background-color: var(--color-surface-card);
+  color: var(--color-neutral-800);
+  font-family: inherit;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.statCard {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-card);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.statTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconCyan { background: var(--color-primary-50); color: var(--color-primary-600); }
+.iconGreen { background: var(--color-success-50); color: var(--color-success-600); }
+.iconPurple { background: var(--color-primary-50); color: var(--color-primary-700); }
+.iconOrange { background: var(--color-warning-50); color: var(--color-warning-500); }
+.iconRed { background: var(--color-danger-50); color: var(--color-danger-500); }
+
+.statValue {
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: var(--color-neutral-500);
+  font-weight: 500;
+}
+
+.grid2Col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .grid2Col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+/* Custom CSS Bar Charts */
+.chartContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chartRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chartLabel {
+  min-width: 120px;
+  max-width: 140px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chartBarTrack {
+  flex: 1;
+  height: 22px;
+  background-color: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--color-border-soft);
+}
+
+.chartBarFill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+}
+
+.chartValue {
+  min-width: 80px;
+  text-align: right;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.metricsSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.metricTile {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.metricTileValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+}
+
+.metricTileLabel {
+  font-size: 0.725rem;
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.tableResponsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-soft);
+  color: var(--color-neutral-800);
+  font-size: 0.825rem;
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--color-neutral-600);
+  background-color: var(--color-surface-muted);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.emptyState {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-neutral-500);
+  font-size: 0.875rem;
+}

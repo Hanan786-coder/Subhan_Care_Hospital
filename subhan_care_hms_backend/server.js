@@ -32,6 +32,7 @@ const medicalHistoryRoutes = require('./routes/medicalHistory.routes');
 const inventoryRoutes = require('./routes/inventory.routes');
 const billingRoutes = require('./routes/billing.routes');
 const auditLogRoutes = require('./routes/auditLog.routes');
+const reportsRoutes = require('./routes/reports.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
@@ -44,6 +45,7 @@ app.use('/api/medical-history', medicalHistoryRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

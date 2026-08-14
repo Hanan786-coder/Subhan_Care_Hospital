@@ -1,0 +1,296 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn var(--transition-base) ease-out;
+  max-width: 900px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header h2 {
+  color: var(--color-neutral-900);
+  font-size: 1.625rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  color: var(--color-neutral-600);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.profileCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profileTopRow {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.profileBadgeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profileName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .profileGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.readOnlyField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.readOnlyLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.readOnlyBox {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  color: var(--color-neutral-800);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fieldNotice {
+  font-size: 0.725rem;
+  color: var(--color-neutral-500);
+  margin-top: 2px;
+}
+
+/* Stepper Component */
+.stepperWrapper {
+  margin-bottom: 1.75rem;
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.stepCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: 2px solid var(--color-neutral-300);
+  color: var(--color-neutral-400);
+  background: var(--color-surface-card);
+  transition: all var(--transition-base);
+}
+
+.stepActive {
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-600);
+  background: var(--color-primary-50);
+  box-shadow: 0 0 0 4px var(--color-primary-100);
+}
+
+.stepCompleted {
+  border-color: var(--color-success-500);
+  color: #ffffff;
+  background: var(--color-success-500);
+}
+
+.stepLabel {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--color-neutral-500);
+}
+
+.stepLabelActive {
+  color: var(--color-primary-700);
+}
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background-color: var(--color-neutral-200);
+  margin: 0 8px;
+  margin-bottom: 20px;
+  transition: background-color var(--transition-base);
+}
+
+.stepLineCompleted {
+  background-color: var(--color-success-500);
+}
+
+/* Form Sections */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 500px;
+}
+
+.devBanner {
+  background-color: var(--color-info-50);
+  border: 1px solid var(--color-info-100);
+  color: var(--color-info-700);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.resendBtn {
+  background: none;
+  border: none;
+  color: var(--color-primary-600);
+  font-size: 0.825rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 4px;
+}
+
+.resendBtn:hover {
+  text-decoration: underline;
+}
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  gap: 1rem;
+}
+
+.successTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+  margin: 0;
+}
+
+.successText {
+  color: var(--color-neutral-600);
+  font-size: 0.875rem;
+  max-width: 400px;
+  margin: 0;
+}
+
+/* Appearance Section */
+.themeToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: var(--color-surface-muted);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border-soft);
+}
+
+.themeInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.themeTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.themeDesc {
+  font-size: 0.8rem;
+  color: var(--color-neutral-500);
+  margin: 0;
+}
+
+.toggleSwitch {
+  width: 56px;
+  height: 30px;
+  border-radius: 99px;
+  background-color: var(--color-neutral-300);
+  padding: 3px;
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  display: flex;
+  align-items: center;
+}
+
+.toggleSwitchActive {
+  background-color: var(--color-primary-600);
+}
+
+.toggleKnob {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  transition: transform var(--transition-spring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-xs);
+}
+
+.toggleKnobActive {
+  transform: translateX(26px);
+}

@@ -32,14 +32,15 @@ const connectDB = async () => {
 
   if (process.env.MONGO_URI) {
     try {
-      const conn = await mongoose.connect(process.env.MONGO_URI, {
-        serverSelectionTimeoutMS: 5000
+      const uri = process.env.MONGO_URI.replace('localhost', '127.0.0.1');
+      const conn = await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 1500
       });
       console.log(`MongoDB Connected: ${conn.connection.host}`);
       await autoSeedIfEmpty();
       return;
     } catch (error) {
-      console.warn(`MongoDB connection failed (${error.message}). Trying MongoMemoryServer fallback...`);
+      console.warn(`Local MongoDB not detected on port 27017 (${error.message}). Switching seamlessly to MongoMemoryServer...`);
     }
   }
 

@@ -289,10 +289,154 @@ const verifyOTP = async (req, res) => {
   }
 };
 
+/**
+ * Update Profile
+ */
+const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({ success: false, error: 'Name must be at least 2 characters long' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    user.name = name.trim();
+    await user.save();
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Change Password - Step 1: Verify current password and send OTP
+ */
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword } = req.body;
+    if (!currentPassword) {
+      return res.status(400).json({ success: false, error: 'Current password is required' });
+    }
+
+    const user = await User.findById(req.user.id).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: 'Incorrect current password' });
+    }
+
+    // Generate OTP
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+    await user.save();
+
+    // Send email
+    const subject = 'Subhan Care HMS — Password Change OTP';
+    const text = `Hello,\n\nYou requested to change your password. Your 6-digit verification OTP is: ${resetToken}\n\nThis OTP is valid for 15 minutes.`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #4f46e5; text-align: center;">Subhan Care HMS</h2>
+        <p>Hello,</p>
+        <p>You requested to change your password. Please use the following 6-digit One-Time Password (OTP) to proceed:</p>
+        <div style="font-size: 24px; font-weight: bold; letter-spacing: 2px; text-align: center; margin: 30px 0; padding: 15px; background-color: #f3f4f6; color: #111827; border-radius: 6px;">
+          ${resetToken}
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">This OTP is valid for 15 minutes. If you did not request this, please contact administrator immediately.</p>
+      </div>
+    `;
+
+    await sendEmail({ to: user.email, subject, text, html });
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent to your email',
+      resetToken // For dev mode
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Change Password - Step 2: Verify OTP
+ */
+const verifyPasswordChangeOtp = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) {
+      return res.status(400).json({ success: false, error: 'OTP is required' });
+    }
+
+    const resetPasswordToken = crypto.createHash('sha256').update(otp.trim()).digest('hex');
+    const user = await User.findOne({
+      _id: req.user.id,
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+    }
+
+    res.status(200).json({ success: true, message: 'OTP verified' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Change Password - Step 3: Confirm new password
+ */
+const confirmPasswordChange = async (req, res) => {
+  try {
+    const { otp, newPassword } = req.body;
+    if (!otp || !newPassword) {
+      return res.status(400).json({ success: false, error: 'OTP and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters long' });
+    }
+
+    const resetPasswordToken = crypto.createHash('sha256').update(otp.trim()).digest('hex');
+    const user = await User.findOne({
+      _id: req.user.id,
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+    }
+
+    user.passwordHash = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   loginUser,
   getMe,
   forgotPassword,
   resetPassword,
-  verifyOTP
+  verifyOTP,
+  updateProfile,
+  changePassword,
+  verifyPasswordChangeOtp,
+  confirmPasswordChange
 };

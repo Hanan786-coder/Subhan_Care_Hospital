@@ -31,6 +31,7 @@ const medicalHistoryRoutes = require('./subhan_care_hms_backend/routes/medicalHi
 const inventoryRoutes = require('./subhan_care_hms_backend/routes/inventory.routes');
 const billingRoutes = require('./subhan_care_hms_backend/routes/billing.routes');
 const auditLogRoutes = require('./subhan_care_hms_backend/routes/auditLog.routes');
+const reportsRoutes = require('./subhan_care_hms_backend/routes/reports.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
@@ -43,6 +44,7 @@ app.use('/api/medical-history', medicalHistoryRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Subhan Care HMS API' });

@@ -33,3 +33,23 @@ export const resetPassword = async (payload) => {
   const response = await api.post('/auth/reset-password', payload);
   return response.data;
 };
+
+export const updateProfile = async (data) => {
+  const response = await api.put('/auth/profile', data);
+  return response.data;
+};
+
+export const changePassword = async (data) => {
+  const response = await api.put('/auth/change-password', data);
+  return response.data;
+};
+
+export const verifyPasswordChangeOtp = async (data) => {
+  const response = await api.post('/auth/verify-password-change', data);
+  return response.data;
+};
+
+export const confirmPasswordChange = async (data) => {
+  const response = await api.put('/auth/confirm-password-change', data);
+  return response.data;
+};
