@@ -15,7 +15,7 @@ const Card = memo(({
   
   return (
     <div 
-      className={`${styles.card} ${hoverable ? styles.hoverable : ''} ${isClickable ? styles.clickable : ''} ${className}`.trim()}
+      className={`animated-card ${styles.card} ${hoverable ? styles.hoverable : ''} ${isClickable ? styles.clickable : ''} ${className}`.trim()}
       onClick={onClick}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}

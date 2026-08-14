@@ -185,9 +185,33 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes cardPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .page-enter {
   animation: fadeIn var(--transition-base) ease forwards;
 }
+
+.animated-card {
+  animation: cardPopIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.30s; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

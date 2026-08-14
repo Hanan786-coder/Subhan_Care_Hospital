@@ -27,7 +27,7 @@ const getSummaryReport = async (req, res) => {
       cancelledAppointments,
       invoices,
       totalPrescriptions,
-      lowStockItems,
+      inventoryItems,
       totalDoctors,
       totalStaff
     ] = await Promise.all([
@@ -38,10 +38,19 @@ const getSummaryReport = async (req, res) => {
       Appointment.countDocuments({ status: 'Cancelled', ...(dateFilter.date ? { date: dateFilter.date } : {}) }),
       Invoice.find(dateFilter.createdAt ? { createdAt: dateFilter.createdAt } : {}),
       Prescription.countDocuments(dateFilter.issuedAt ? { issuedAt: dateFilter.issuedAt } : {}),
-      InventoryItem.find({ $expr: { $lte: ['$quantity', '$reorderLevel'] } }),
+      InventoryItem.find(),
       Doctor.countDocuments({ status: 'Active' }),
       Staff.countDocuments({ status: 'Active' })
     ]);
+
+    let lowStockAlerts = 0;
+    inventoryItems.forEach((item) => {
+      const qty = item.quantityInStock ?? item.quantity ?? 0;
+      const threshold = item.reorderThreshold ?? item.reorderLevel ?? 0;
+      if (qty <= threshold || item.status === 'Low Stock' || item.status === 'Out of Stock') {
+        lowStockAlerts++;
+      }
+    });
 
     const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.amountPaid || 0), 0);
     const totalBilled = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
@@ -60,7 +69,7 @@ const getSummaryReport = async (req, res) => {
         outstandingBalance,
         totalInvoices: invoices.length,
         totalPrescriptions,
-        lowStockAlerts: lowStockItems.length,
+        lowStockAlerts,
         activeDoctors: totalDoctors,
         activeStaff: totalStaff
       }
@@ -244,9 +253,12 @@ const getInventoryReport = async (req, res) => {
       const cat = item.category || 'General';
       categoryStats[cat] = (categoryStats[cat] || 0) + 1;
 
-      totalStockValue += (item.quantity || 0) * (item.unitPrice || 0);
+      const qty = item.quantityInStock ?? item.quantity ?? 0;
+      const threshold = item.reorderThreshold ?? item.reorderLevel ?? 0;
 
-      if (item.quantity <= item.reorderLevel) {
+      totalStockValue += qty * (item.unitPrice || 0);
+
+      if (qty <= threshold || item.status === 'Low Stock' || item.status === 'Out of Stock') {
         lowStockItems.push(item);
       }
 
@@ -280,24 +292,27 @@ function getDateRangeFilter(range) {
   const now = new Date();
 
   if (range === 'today') {
-    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
     filter.createdAt = { $gte: startOfDay, $lte: endOfDay };
     filter.date = { $gte: startOfDay, $lte: endOfDay };
     filter.issuedAt = { $gte: startOfDay, $lte: endOfDay };
   } else if (range === 'week') {
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - 7);
+    startOfWeek.setHours(0, 0, 0, 0);
     filter.createdAt = { $gte: startOfWeek };
     filter.date = { $gte: startOfWeek };
     filter.issuedAt = { $gte: startOfWeek };
   } else if (range === 'month') {
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     filter.createdAt = { $gte: startOfMonth };
     filter.date = { $gte: startOfMonth };
     filter.issuedAt = { $gte: startOfMonth };
   } else if (range === 'year') {
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
     filter.createdAt = { $gte: startOfYear };
     filter.date = { $gte: startOfYear };
     filter.issuedAt = { $gte: startOfYear };

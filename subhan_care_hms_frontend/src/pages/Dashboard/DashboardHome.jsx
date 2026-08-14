@@ -111,7 +111,11 @@ const DashboardHome = () => {
       : prescriptions;
 
     // Inventory
-    const lowStockItems = inventory.filter(i => Number(i.quantity) <= Number(i.reorderLevel));
+    const lowStockItems = inventory.filter(i => {
+      const qty = i.quantityInStock ?? i.quantity ?? 0;
+      const threshold = i.reorderThreshold ?? i.reorderLevel ?? 0;
+      return qty <= threshold || i.status === 'Low Stock' || i.status === 'Out of Stock';
+    });
 
     // Billing / Financials
     const totalRevenue = invoices
