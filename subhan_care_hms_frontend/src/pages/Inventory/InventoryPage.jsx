@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect, CountUp, Skeleton } from '@/components/ui';
 import useDebounce from '@/hooks/useDebounce';
 import { createInventoryItem, createSupplier, getInventory, getSuppliers, restockInventoryItem } from '@/services/inventoryService';
 import { useAuth } from '@/context/AuthContext';
@@ -219,6 +219,31 @@ const InventoryPage = () => {
     }).length;
   }, [items]);
 
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerTitle}>
+            <Skeleton variant="text" height={28} width={290} />
+            <Skeleton variant="text" height={16} width={440} />
+          </div>
+        </div>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3].map(i => <Skeleton key={i} variant="card" height={110} />)}
+        </div>
+        <Card>
+          <CardBody>
+            {[1,2,3,4,5,6,7].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-100)' }}>
+                {[130,100,90,80,70,80,90,70,60].map((w, j) => <Skeleton key={j} variant="text" width={w} height={14} />)}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -242,7 +267,7 @@ const InventoryPage = () => {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
-            <div className={styles.statValue}>{items.length}</div>
+            <div className={styles.statValue}><CountUp value={items.length} /></div>
             <div className={styles.statLabel}>Unique Items</div>
           </div>
           <div className={styles.statIconBadge} style={{ backgroundColor: 'var(--color-primary-50)', color: 'var(--color-primary-600)' }}>
@@ -253,7 +278,7 @@ const InventoryPage = () => {
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
             <div className={styles.statValue} style={{ color: lowStockCount > 0 ? 'var(--color-warning-600)' : 'inherit' }}>
-              {lowStockCount}
+              <CountUp value={lowStockCount} />
             </div>
             <div className={styles.statLabel}>Low Stock Items</div>
           </div>
@@ -265,7 +290,7 @@ const InventoryPage = () => {
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
             <div className={styles.statValue} style={{ color: expiredCount > 0 ? 'var(--color-danger-600)' : 'inherit' }}>
-              {expiredCount}
+              <CountUp value={expiredCount} />
             </div>
             <div className={styles.statLabel}>Expired / Near Expiry</div>
           </div>
@@ -320,11 +345,7 @@ const InventoryPage = () => {
             </div>
           </CardHeader>
           <CardBody>
-            {loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                <Spinner />
-              </div>
-            ) : (
+            {false ? null : (
               <div className={styles.tableResponsive}>
                 <table className={styles.table}>
                   <thead>

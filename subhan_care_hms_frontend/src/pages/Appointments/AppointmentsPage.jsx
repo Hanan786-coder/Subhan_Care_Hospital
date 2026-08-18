@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect, CountUp, Skeleton } from '@/components/ui';
 import useDebounce from '@/hooks/useDebounce';
 import {
   getAppointments,
@@ -229,6 +229,31 @@ const AppointmentsPage = () => {
     }));
   }, [slots]);
 
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerTitle}>
+            <Skeleton variant="text" height={28} width={240} />
+            <Skeleton variant="text" height={16} width={400} />
+          </div>
+        </div>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3].map(i => <Skeleton key={i} variant="card" height={110} />)}
+        </div>
+        <Card>
+          <CardBody>
+            {[1,2,3,4,5,6,7].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-100)' }}>
+                {[80,140,130,110,100,90,80,70].map((w, j) => <Skeleton key={j} variant="text" width={w} height={14} />)}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -251,14 +276,14 @@ const AppointmentsPage = () => {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
-            <div className={styles.statValue}>{appointments.length}</div>
+            <div className={styles.statValue}><CountUp value={appointments.length} /></div>
             <div className={styles.statLabel}>Total Appointments</div>
           </div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
             <div className={styles.statValue}>
-              {appointments.filter((a) => a.status === 'Scheduled' || a.status === 'Rescheduled').length}
+              <CountUp value={appointments.filter((a) => a.status === 'Scheduled' || a.status === 'Rescheduled').length} />
             </div>
             <div className={styles.statLabel}>Active / Scheduled</div>
           </div>
@@ -266,7 +291,7 @@ const AppointmentsPage = () => {
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
             <div className={styles.statValue}>
-              {appointments.filter((a) => a.status === 'Completed').length}
+              <CountUp value={appointments.filter((a) => a.status === 'Completed').length} />
             </div>
             <div className={styles.statLabel}>Completed Visits</div>
           </div>
@@ -302,11 +327,7 @@ const AppointmentsPage = () => {
           </div>
         </CardHeader>
         <CardBody>
-          {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-              <Spinner />
-            </div>
-          ) : (
+          {false ? null : (
             <div className={styles.tableResponsive}>
               <table className={styles.table}>
                 <thead>

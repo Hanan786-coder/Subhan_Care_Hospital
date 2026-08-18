@@ -1,0 +1,389 @@
+/* ============================================================
+   Interactive Histogram, Column & Bar Chart Styles
+   ============================================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+  position: relative;
+}
+
+.chartControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chartSummaryInfo {
+  font-size: 0.75rem;
+  color: var(--color-neutral-500);
+  font-weight: 600;
+}
+
+.chartSummaryInfo strong {
+  color: var(--color-neutral-900);
+}
+
+.modeToggleGroup {
+  display: inline-flex;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  gap: 2px;
+}
+
+.modeBtn {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--color-neutral-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modeBtn:hover {
+  color: var(--color-neutral-900);
+}
+
+.modeBtnActive {
+  background: var(--color-surface-card);
+  color: var(--color-primary-600);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+/* ============================================================
+   Vertical Histogram / Column Mode
+   ============================================================ */
+.columnChartWrapper {
+  position: relative;
+  height: 230px;
+  margin-top: 14px;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.columnChartGrid {
+  position: absolute;
+  top: 0;
+  left: 46px;
+  right: 8px;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gridLine {
+  width: 100%;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.18);
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.gridLineLabel {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-neutral-500);
+  position: absolute;
+  left: -46px;
+  width: 40px;
+  text-align: right;
+}
+
+.columnBarsContainer {
+  position: absolute;
+  top: 0;
+  left: 50px;
+  right: 12px;
+  bottom: 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.columnBarSlot {
+  position: relative;
+  flex: 1;
+  max-width: 52px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  cursor: pointer;
+}
+
+.columnBarPill {
+  position: absolute;
+  top: -24px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-neutral-700);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0.85;
+  transition: all var(--transition-fast);
+}
+
+.columnBarSlot:hover .columnBarPill {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.columnBar {
+  width: 100%;
+  max-width: 36px;
+  border-radius: 6px 6px 2px 2px;
+  position: relative;
+  transform-origin: bottom center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.columnBarActive {
+  filter: brightness(1.15) drop-shadow(0 4px 12px rgba(8, 145, 178, 0.35));
+  transform: scaleY(1.04) scaleX(1.04);
+}
+
+.columnBarDimmed {
+  opacity: 0.45;
+}
+
+/* Floating Rich Tooltip */
+.richTooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-neutral-900);
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.725rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  animation: tooltipFade 0.15s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+@keyframes tooltipFade {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.richTooltipTitle {
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.richTooltipValue {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-primary-300);
+}
+
+.richTooltipSub {
+  font-size: 0.625rem;
+  color: #94a3b8;
+  display: flex;
+  gap: 6px;
+}
+
+.richTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px 5px 0 5px;
+  border-style: solid;
+  border-color: var(--color-neutral-900) transparent transparent transparent;
+}
+
+.columnXAxis {
+  position: absolute;
+  left: 50px;
+  right: 12px;
+  bottom: 0;
+  height: 26px;
+  display: flex;
+  justify-content: space-around;
+  gap: 6px;
+  padding: 0 4px;
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.columnXLabel {
+  flex: 1;
+  max-width: 58px;
+  font-size: 0.675rem;
+  font-weight: 600;
+  color: var(--color-neutral-600);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 4px;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.columnXLabelActive {
+  color: var(--color-primary-600);
+  font-weight: 700;
+}
+
+/* ============================================================
+   Ranked Horizontal Bars Mode
+   ============================================================ */
+.horizontalBarList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0.25rem 0;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  cursor: pointer;
+}
+
+.barRow:hover,
+.barRowActive {
+  background-color: var(--color-surface-muted);
+  transform: translateX(2px);
+}
+
+.barRank {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-neutral-400);
+  width: 18px;
+  text-align: center;
+}
+
+.barLabel {
+  width: 110px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barTrack {
+  flex: 1;
+  height: 18px;
+  background-color: var(--color-surface-muted);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--color-border-soft);
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter var(--transition-fast);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.barRowActive .barFill {
+  filter: brightness(1.15) drop-shadow(0 2px 6px rgba(8, 145, 178, 0.3));
+}
+
+.barValueCol {
+  min-width: 80px;
+  text-align: right;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.barPercent {
+  font-size: 0.675rem;
+  color: var(--color-neutral-500);
+  font-weight: 500;
+}
+
+/* ============================================================
+   Smooth Area Trend / Spline Mode
+   ============================================================ */
+.trendChartWrapper {
+  position: relative;
+  height: 220px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.trendSvg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.trendArea {
+  opacity: 0.28;
+  transition: opacity var(--transition-fast);
+}
+
+.trendLine {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 6px rgba(8, 145, 178, 0.3));
+}
+
+.trendNode {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), r 0.2s ease, filter 0.2s ease;
+}
+
+.trendNode:hover,
+.trendNodeActive {
+  r: 6.5;
+  filter: brightness(1.2) drop-shadow(0 0 6px rgba(8, 145, 178, 0.6));
+}
+
+.emptyState {
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--color-neutral-500);
+  font-size: 0.875rem;
+}

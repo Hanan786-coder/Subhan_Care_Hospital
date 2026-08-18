@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ROLE_LABELS, ROLES } from '@/constants/roles';
-import { Card, Badge, Skeleton, Button } from '@/components/ui';
+import { Card, Badge, Skeleton, Button, CountUp } from '@/components/ui';
 import {
   Users, Calendar, Activity, DollarSign,
   TrendingUp, Clock, AlertTriangle, FileText,
@@ -17,18 +17,28 @@ import { getAuditLogs } from '@/services/auditLogService';
 import toast from 'react-hot-toast';
 import styles from './DashboardHome.module.css';
 
-const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-  <div className={styles.statCard}>
-    <div className={styles.statTop}>
-      <div className={`${styles.statIcon} ${styles[colorClass]}`}>
-        <Icon size={20} />
+const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }) => {
+  const isNumeric = typeof value === 'number' || (typeof value === 'string' && /^\s*(Rs\.\s*)?[\d,.]+\s*$/.test(value));
+  const isRs = typeof value === 'string' && value.includes('Rs.');
+  const numVal = isNumeric
+    ? (typeof value === 'number' ? value : parseFloat(String(value).replace(/[^0-9.-]+/g, '')) || 0)
+    : null;
+
+  return (
+    <div className={styles.statCard}>
+      <div className={styles.statTop}>
+        <div className={`${styles.statIcon} ${styles[colorClass]}`}>
+          <Icon size={20} />
+        </div>
       </div>
+      <h3 className={styles.statValue}>
+        {isNumeric ? <CountUp value={numVal} prefix={isRs ? 'Rs. ' : ''} /> : value}
+      </h3>
+      <p className={styles.statTitle}>{title}</p>
+      {subtitle && <span style={{ fontSize: '0.725rem', color: 'var(--color-neutral-500)', marginTop: '4px', display: 'block' }}>{subtitle}</span>}
     </div>
-    <h3 className={styles.statValue}>{value}</h3>
-    <p className={styles.statTitle}>{title}</p>
-    {subtitle && <span style={{ fontSize: '0.725rem', color: 'var(--color-neutral-500)', marginTop: '4px', display: 'block' }}>{subtitle}</span>}
-  </div>
-);
+  );
+};
 
 const DashboardHome = () => {
   const { user, isLoading: isAuthLoading } = useAuth();

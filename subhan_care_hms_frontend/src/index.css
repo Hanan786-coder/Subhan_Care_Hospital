@@ -20,7 +20,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -36,7 +35,6 @@ body {
   overscroll-behavior-y: none;
   scrollbar-gutter: stable;
   transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
-  transform: translateZ(0);
 }
 
 body::before {
@@ -45,16 +43,16 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(15, 76, 92, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 76, 92, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(15, 76, 92, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 76, 92, 0.035) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 80%);
+  opacity: 0.8;
 }
 
 :root[data-theme='dark'] body::before {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 }
 
 #root {
@@ -201,9 +199,7 @@ button {
 }
 
 .animated-card {
-  animation: cardPopIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
-  transform: translateZ(0);
+  animation: cardPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .delay-1 { animation-delay: 0.05s; }

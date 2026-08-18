@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getStaffList, createStaff, updateStaff, deactivateStaff } from '../../services/staffService';
-import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal, PasswordValidator, isPasswordValid } from '../../components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal, PasswordValidator, isPasswordValid, CountUp, Skeleton } from '../../components/ui';
 import { 
   Plus, Edit, Trash2, Search, UserCheck, Shield, Clock, 
   Phone, Mail, MapPin, Users, AlertTriangle, Eye, Check, XCircle, RotateCcw
@@ -226,6 +226,32 @@ const StaffPage = () => {
     setStatusFilter('');
   };
 
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerTitle}>
+            <Skeleton variant="text" height={28} width={200} />
+            <Skeleton variant="text" height={16} width={400} />
+          </div>
+        </div>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="card" height={100} />)}
+        </div>
+        <Card>
+          <CardBody>
+            {[1,2,3,4,5,6,7].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-100)' }}>
+                <Skeleton variant="circle" width={40} height={40} />
+                {[150,120,110,90,80,70].map((w, j) => <Skeleton key={j} variant="text" width={w} height={14} />)}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -248,7 +274,7 @@ const StaffPage = () => {
             <Users size={24} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.total}</span>
+            <span className={styles.statValue}><CountUp value={stats.total} /></span>
             <span className={styles.statLabel}>Total Staff Members</span>
           </div>
         </div>
@@ -258,7 +284,7 @@ const StaffPage = () => {
             <UserCheck size={24} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.active}</span>
+            <span className={styles.statValue}><CountUp value={stats.active} /></span>
             <span className={styles.statLabel}>Active Staff Accounts</span>
           </div>
         </div>
@@ -268,7 +294,7 @@ const StaffPage = () => {
             <Shield size={24} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.receptionists}</span>
+            <span className={styles.statValue}><CountUp value={stats.receptionists} /></span>
             <span className={styles.statLabel}>Receptionists</span>
           </div>
         </div>
@@ -278,7 +304,7 @@ const StaffPage = () => {
             <Clock size={24} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.pharmacists}</span>
+            <span className={styles.statValue}><CountUp value={stats.pharmacists} /></span>
             <span className={styles.statLabel}>Pharmacists</span>
           </div>
         </div>

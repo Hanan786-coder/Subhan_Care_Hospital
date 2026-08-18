@@ -8,4 +8,4 @@ export { default as Skeleton } from './Skeleton';
 export { default as Modal } from './Modal';
 export { default as PasswordValidator, isPasswordValid } from './PasswordValidator';
 export { default as SearchSelect } from './SearchSelect';
-
+export { default as CountUp } from './CountUp';

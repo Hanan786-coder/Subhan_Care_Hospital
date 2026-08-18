@@ -10,7 +10,6 @@
   background: var(--color-surface-card);
   border: 1px solid var(--color-border-soft);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(12px);
 }
 
 .heroKicker {
@@ -71,9 +70,8 @@
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-card);
   padding: var(--card-padding);
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px);
 }
 .statCard:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: rgba(8, 145, 178, 0.24); }
 

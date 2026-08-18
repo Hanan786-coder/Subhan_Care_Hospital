@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect, CountUp, Skeleton } from '@/components/ui';
 import useDebounce from '@/hooks/useDebounce';
 import { createInvoice, getInvoices, recordPayment } from '@/services/billingService';
 import { getPatients } from '@/services/patientService';
@@ -297,6 +297,31 @@ const BillingPage = () => {
     printWindow.document.close();
   };
 
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerTitle}>
+            <Skeleton variant="text" height={28} width={260} />
+            <Skeleton variant="text" height={16} width={420} />
+          </div>
+        </div>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3].map(i => <Skeleton key={i} variant="card" height={110} />)}
+        </div>
+        <Card>
+          <CardBody>
+            {[1,2,3,4,5,6,7].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-100)' }}>
+                {[80,150,100,90,80,90,90,80,70,60].map((w, j) => <Skeleton key={j} variant="text" width={w} height={14} />)}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -314,21 +339,21 @@ const BillingPage = () => {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
-            <div className={styles.statValue}>Rs. {totalRevenue.toLocaleString()}</div>
+            <div className={styles.statValue}>Rs. <CountUp value={totalRevenue} /></div>
             <div className={styles.statLabel}>Total Revenue Collected</div>
           </div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
             <div className={styles.statValue} style={{ color: 'var(--color-warning-600)' }}>
-              Rs. {outstanding.toLocaleString()}
+              Rs. <CountUp value={outstanding} />
             </div>
             <div className={styles.statLabel}>Outstanding Balance</div>
           </div>
         </div>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
-            <div className={styles.statValue}>{invoices.length}</div>
+            <div className={styles.statValue}><CountUp value={invoices.length} /></div>
             <div className={styles.statLabel}>Invoices Issued</div>
           </div>
         </div>
@@ -361,11 +386,7 @@ const BillingPage = () => {
           </div>
         </CardHeader>
         <CardBody>
-          {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-              <Spinner />
-            </div>
-          ) : (
+          {false ? null : (
             <div className={styles.tableResponsive}>
               <table className={styles.table}>
                 <thead>

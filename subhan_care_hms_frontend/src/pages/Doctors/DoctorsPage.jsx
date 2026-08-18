@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getDoctors, createDoctor, updateDoctor, updateDoctorSchedule, deactivateDoctor } from '../../services/doctorService';
-import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal, PasswordValidator, isPasswordValid } from '../../components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Spinner, Input, Modal, PasswordValidator, isPasswordValid, CountUp, Skeleton } from '../../components/ui';
 import { Plus, Edit, Trash2, Search, Calendar, UserCheck, Stethoscope, Clock, ShieldAlert, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import useDebounce from '../../hooks/useDebounce';
@@ -313,6 +313,32 @@ const DoctorsPage = () => {
     return { total, active, available, dayOff };
   }, [doctors]);
 
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerTitle}>
+            <Skeleton variant="text" height={28} width={210} />
+            <Skeleton variant="text" height={16} width={460} />
+          </div>
+        </div>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="card" height={100} />)}
+        </div>
+        <Card>
+          <CardBody>
+            {[1,2,3,4,5,6,7].map(i => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-100)' }}>
+                <Skeleton variant="circle" width={40} height={40} />
+                {[140,120,110,100,90,80,70].map((w, j) => <Skeleton key={j} variant="text" width={w} height={14} />)}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -336,7 +362,7 @@ const DoctorsPage = () => {
             <Stethoscope size={22} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.total}</span>
+            <span className={styles.statValue}><CountUp value={stats.total} /></span>
             <span className={styles.statLabel}>Total Doctors</span>
           </div>
         </div>
@@ -345,7 +371,7 @@ const DoctorsPage = () => {
             <UserCheck size={22} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.active}</span>
+            <span className={styles.statValue}><CountUp value={stats.active} /></span>
             <span className={styles.statLabel}>Active Clinical Staff</span>
           </div>
         </div>
@@ -354,7 +380,7 @@ const DoctorsPage = () => {
             <CheckCircle size={22} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.available}</span>
+            <span className={styles.statValue}><CountUp value={stats.available} /></span>
             <span className={styles.statLabel}>Available Right Now</span>
           </div>
         </div>
@@ -363,7 +389,7 @@ const DoctorsPage = () => {
             <AlertTriangle size={22} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{stats.dayOff}</span>
+            <span className={styles.statValue}><CountUp value={stats.dayOff} /></span>
             <span className={styles.statLabel}>Day Off Today</span>
           </div>
         </div>

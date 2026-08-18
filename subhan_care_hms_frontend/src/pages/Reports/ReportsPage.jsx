@@ -1,5 +1,10 @@
-import { useEffect, useState, useMemo, memo } from 'react';
-import { Card, Skeleton, Button, Badge } from '@/components/ui';
+import React, { useEffect, useState, useMemo, memo } from 'react';
+import { Card, Skeleton, Button, Badge, CountUp } from '@/components/ui';
+import {
+  InteractivePieChart,
+  InteractiveHistogramChart,
+  RadialGauge
+} from '@/components/Charts';
 import {
   getSummaryReport,
   getRevenueReport,
@@ -14,237 +19,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './Reports.module.css';
-
-const CHART_PALETTE = [
-  '#0891b2', // Cyan / Primary
-  '#10b981', // Green / Success
-  '#f59e0b', // Amber / Warning
-  '#ef4444', // Red / Danger
-  '#8b5cf6', // Purple
-  '#ec4899', // Pink
-  '#3b82f6', // Blue
-  '#6366f1'  // Indigo
-];
-
-// Memoized Interactive SVG Donut/Pie Chart Component with Pop-out & Live Tooltips
-const DonutChart = memo(({ data = {}, totalLabel = 'Total' }) => {
-  const [hoveredIdx, setHoveredIdx] = useState(null);
-  const entries = useMemo(() => Object.entries(data).filter(([, val]) => Number(val) > 0), [data]);
-  const total = useMemo(() => entries.reduce((sum, [, val]) => sum + Number(val), 0), [entries]);
-
-  if (entries.length === 0 || total === 0) {
-    return <div className={styles.emptyState}>No data recorded for chart</div>;
-  }
-
-  let cumulativePercent = 0;
-  const strokeWidth = 4;
-  const radius = 15.91549430918954; // circumference = 100
-
-  const segments = entries.map(([label, val], idx) => {
-    const value = Number(val);
-    const percent = (value / total) * 100;
-    const dashArray = `${percent} ${100 - percent}`;
-    const dashOffset = 100 - cumulativePercent;
-    cumulativePercent += percent;
-
-    return {
-      label,
-      value,
-      percent: Math.round(percent),
-      dashArray,
-      dashOffset,
-      color: CHART_PALETTE[idx % CHART_PALETTE.length]
-    };
-  });
-
-  const activeItem = hoveredIdx !== null ? segments[hoveredIdx] : null;
-
-  return (
-    <div className={styles.donutWrapper}>
-      <div className={styles.donutSvgContainer}>
-        <svg viewBox="0 0 42 42" className={styles.donutSvg}>
-          <circle cx="21" cy="21" r={radius} fill="none" stroke="var(--color-surface-muted)" strokeWidth={strokeWidth} />
-          {segments.map((seg, idx) => (
-            <circle
-              key={seg.label}
-              cx="21"
-              cy="21"
-              r={radius}
-              className={`${styles.donutSegment} ${hoveredIdx === idx ? styles.donutSegmentActive : ''}`}
-              stroke={seg.color}
-              strokeDasharray={seg.dashArray}
-              strokeDashoffset={seg.dashOffset}
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseLeave={() => setHoveredIdx(null)}
-            />
-          ))}
-        </svg>
-        <div className={styles.donutCenterText}>
-          <div className={styles.donutCenterVal}>
-            {activeItem ? activeItem.value.toLocaleString() : total.toLocaleString()}
-          </div>
-          <div className={styles.donutCenterLbl} title={activeItem ? activeItem.label : totalLabel}>
-            {activeItem ? `${activeItem.label} (${activeItem.percent}%)` : totalLabel}
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.donutLegend}>
-        {segments.map((seg, idx) => (
-          <div
-            key={seg.label}
-            className={`${styles.donutLegendItem} ${hoveredIdx === idx ? styles.donutLegendItemActive : ''}`}
-            onMouseEnter={() => setHoveredIdx(idx)}
-            onMouseLeave={() => setHoveredIdx(null)}
-          >
-            <div className={styles.donutLegendBadge}>
-              <span className={styles.donutDot} style={{ backgroundColor: seg.color }} />
-              <span>{seg.label}</span>
-            </div>
-            <div className={styles.donutLegendVal}>
-              {seg.value.toLocaleString()} <span style={{ fontSize: '0.725rem', color: 'var(--color-neutral-500)', fontWeight: 500 }}>({seg.percent}%)</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
-
-// Memoized Radial Gauge Ring Component
-const GaugeRing = memo(({ percentage = 0, title = 'Rate', subtitle = '' }) => {
-  const clamped = Math.min(Math.max(percentage, 0), 100);
-  const radius = 28;
-  const circumference = 2 * Math.PI * radius; // ~175.9
-  const offset = circumference - (clamped / 100) * circumference;
-  const strokeColor = clamped >= 75 ? 'var(--color-success-500)' : clamped >= 50 ? 'var(--color-warning-500)' : 'var(--color-danger-500)';
-
-  return (
-    <div className={styles.gaugeContainer}>
-      <div className={styles.gaugeCircle}>
-        <svg viewBox="0 0 64 64" className={styles.gaugeSvg}>
-          <circle cx="32" cy="32" r={radius} className={styles.gaugeBg} />
-          <circle
-            cx="32"
-            cy="32"
-            r={radius}
-            className={styles.gaugeFill}
-            stroke={strokeColor}
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-          />
-        </svg>
-        <div className={styles.gaugeText}>{clamped}%</div>
-      </div>
-      <div className={styles.gaugeMeta}>
-        <h4>{title}</h4>
-        <p>{subtitle}</p>
-      </div>
-    </div>
-  );
-});
-
-// Memoized Animated Column / Bar Chart Component
-const AnimatedBarChart = memo(({ data = {}, prefix = '' }) => {
-  const entries = useMemo(() => Object.entries(data), [data]);
-  const maxVal = useMemo(() => Math.max(...entries.map(([, val]) => Number(val) || 0), 1), [entries]);
-
-  if (entries.length === 0) {
-    return <div className={styles.emptyState}>No records available for chart</div>;
-  }
-
-  // Use vertical column chart when <= 8 items for maximum visual impact, or horizontal if more items
-  const isVertical = entries.length <= 8;
-
-  if (!isVertical) {
-    return (
-      <div className={styles.horizontalBarChart}>
-        {entries.map(([label, val], idx) => {
-          const numVal = Number(val) || 0;
-          const percentage = Math.round((numVal / maxVal) * 100);
-          const color = CHART_PALETTE[idx % CHART_PALETTE.length];
-
-          return (
-            <div key={label} className={styles.chartRow}>
-              <div className={styles.chartLabel} title={label}>{label}</div>
-              <div className={styles.chartBarTrack}>
-                <div
-                  className={styles.chartBarFill}
-                  style={{
-                    width: `${percentage}%`,
-                    background: `linear-gradient(90deg, ${color}dd, ${color})`,
-                    animationDelay: `${idx * 0.08}s`
-                  }}
-                />
-              </div>
-              <div className={styles.chartValue}>
-                {prefix} {numVal.toLocaleString()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Grid tick values (100%, 50%, 0%)
-  const topTick = maxVal;
-  const midTick = Math.round(maxVal / 2);
-
-  return (
-    <div className={styles.columnChartWrapper}>
-      {/* Background Grid */}
-      <div className={styles.columnChartGrid}>
-        <div className={styles.gridLine}>
-          <span className={styles.gridLineLabel}>{topTick > 999 ? `${(topTick/1000).toFixed(1)}k` : topTick}</span>
-        </div>
-        <div className={styles.gridLine}>
-          <span className={styles.gridLineLabel}>{midTick > 999 ? `${(midTick/1000).toFixed(1)}k` : midTick}</span>
-        </div>
-        <div className={styles.gridLine}>
-          <span className={styles.gridLineLabel}>0</span>
-        </div>
-      </div>
-
-      {/* Vertical Animated Column Bars */}
-      <div className={styles.columnBarsContainer}>
-        {entries.map(([label, val], idx) => {
-          const numVal = Number(val) || 0;
-          const heightPercent = Math.max(Math.round((numVal / maxVal) * 100), 4);
-          const color = CHART_PALETTE[idx % CHART_PALETTE.length];
-
-          return (
-            <div
-              key={label}
-              className={styles.columnBarSlot}
-            >
-              <div className={styles.columnBarTooltip}>
-                {label}: {prefix} {numVal.toLocaleString()}
-              </div>
-              <div
-                className={styles.columnBar}
-                style={{
-                  height: `${heightPercent}%`,
-                  background: `linear-gradient(180deg, ${color}, ${color}cc)`,
-                  animationDelay: `${idx * 0.08}s`
-                }}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* X-Axis Labels */}
-      <div className={styles.columnXAxis}>
-        {entries.map(([label]) => (
-          <div key={label} className={styles.columnXLabel} title={label}>
-            {label}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
 
 const ReportsPage = () => {
   const [range, setRange] = useState('all');
@@ -330,7 +104,7 @@ const ReportsPage = () => {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Subhan Care HMS — Executive Report</title>
+          <title>Subhan Care HMS — Executive Analytics Report</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
             body { font-family: 'Figtree', sans-serif; padding: 40px; color: #164e63; background: #ffffff; line-height: 1.5; }
@@ -353,7 +127,7 @@ const ReportsPage = () => {
           <div class="header">
             <div>
               <h1>Subhan Care Hospital Management System</h1>
-              <p>Comprehensive Executive Operational & Financial Analytics Report</p>
+              <p>Executive Operational, Clinical & Financial Analytics Report</p>
             </div>
             <div>
               <span class="badge">Range: ${range.toUpperCase()}</span>
@@ -380,7 +154,7 @@ const ReportsPage = () => {
             </div>
           </div>
 
-          <div class="section-title">Revenue & Financial Breakdown</div>
+          <div class="section-title">Revenue & Financial Summary</div>
           <table>
             <thead>
               <tr><th>Metric</th><th>Amount / Count</th></tr>
@@ -393,7 +167,7 @@ const ReportsPage = () => {
             </tbody>
           </table>
 
-          <div class="section-title">Payment Method Distribution</div>
+          <div class="section-title">Payment Method Breakdown</div>
           <table>
             <thead>
               <tr><th>Payment Method</th><th>Amount Collected (Rs.)</th></tr>
@@ -417,10 +191,10 @@ const ReportsPage = () => {
             </tbody>
           </table>
 
-          <div class="section-title">Low Inventory Stock Alerts</div>
+          <div class="section-title">Pharmacy Low Stock Alerts</div>
           <table>
             <thead>
-              <tr><th>Item Name</th><th>Category</th><th>Current Stock</th><th>Reorder Level</th></tr>
+              <tr><th>Item Name</th><th>Category</th><th>Current Stock</th><th>Reorder Threshold</th></tr>
             </thead>
             <tbody>
               ${(inventoryStats?.lowStockItems || []).map(item => `
@@ -430,7 +204,7 @@ const ReportsPage = () => {
                   <td style="color: #dc2626;"><strong>${item.quantityInStock ?? item.quantity ?? 0} ${item.unit || 'units'}</strong></td>
                   <td>${item.reorderThreshold ?? item.reorderLevel ?? 0} ${item.unit || 'units'}</td>
                 </tr>
-              `).join('') || '<tr><td colSpan="4">No low stock items. Inventory healthy!</td></tr>'}
+              `).join('') || '<tr><td colSpan="4">All items sufficiently stocked!</td></tr>'}
             </tbody>
           </table>
 
@@ -445,7 +219,7 @@ const ReportsPage = () => {
 
   const handleSavePicture = () => {
     handlePrintReport();
-    toast.success('Report print view opened. Choose "Save as PDF" or print as picture in your browser.');
+    toast.success('Report print view opened. Choose "Save as PDF" in your browser print window.');
   };
 
   if (loading && !summary) {
@@ -473,16 +247,17 @@ const ReportsPage = () => {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTitle}>
-          <h2>Hospital Analytics & Executive Dashboard</h2>
-          <p>Real-time performance analytics, interactive data visualizer, and stock inventory metrics.</p>
+          <h2>Hospital Analytics & Reports</h2>
+          <p>Interactive data visualizer, smooth animated multi-mode charts, and hospital performance KPIs.</p>
         </div>
         <div className={styles.headerActions}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Filter size={16} style={{ color: 'var(--color-neutral-500)' }} />
+          <div className={styles.rangeSelectWrapper}>
+            <Filter size={15} style={{ color: 'var(--color-neutral-500)' }} />
             <select
               className={styles.rangeSelect}
               value={range}
               onChange={(e) => setRange(e.target.value)}
+              aria-label="Filter range"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -495,7 +270,7 @@ const ReportsPage = () => {
             Refresh
           </Button>
           <Button variant="outline" icon={<Download size={14} />} onClick={handleSavePicture}>
-            Save Picture / PDF
+            Export / PDF
           </Button>
           <Button variant="primary" icon={<Printer size={14} />} onClick={handlePrintReport}>
             Print Report
@@ -506,66 +281,75 @@ const ReportsPage = () => {
       {/* Category Tab Bar */}
       <div className={styles.tabsBar}>
         <button
+          type="button"
           className={`${styles.tabBtn} ${activeCategory === 'all' ? styles.tabActive : ''}`}
           onClick={() => setActiveCategory('all')}
         >
-          <LayoutGrid size={16} /> All Reports
+          <LayoutGrid size={15} /> All Reports
         </button>
         <button
+          type="button"
           className={`${styles.tabBtn} ${activeCategory === 'revenue' ? styles.tabActive : ''}`}
           onClick={() => setActiveCategory('revenue')}
         >
-          <DollarSign size={16} /> Financials & Revenue
+          <DollarSign size={15} /> Financials & Revenue
         </button>
         <button
+          type="button"
           className={`${styles.tabBtn} ${activeCategory === 'patients' ? styles.tabActive : ''}`}
           onClick={() => setActiveCategory('patients')}
         >
-          <Users size={16} /> Patients & Demographics
+          <Users size={15} /> Patients & Demographics
         </button>
         <button
+          type="button"
           className={`${styles.tabBtn} ${activeCategory === 'appointments' ? styles.tabActive : ''}`}
           onClick={() => setActiveCategory('appointments')}
         >
-          <Calendar size={16} /> Appointments & Operations
+          <Calendar size={15} /> Appointments & Clinical Flow
         </button>
         <button
+          type="button"
           className={`${styles.tabBtn} ${activeCategory === 'inventory' ? styles.tabActive : ''}`}
           onClick={() => setActiveCategory('inventory')}
         >
-          <Package size={16} /> Pharmacy & Stock Alerts
+          <Package size={15} /> Pharmacy & Stock Health
         </button>
       </div>
 
-      {/* Animated KPI Cards Row */}
+      {/* Modern KPI Summary Stat Cards */}
       <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${styles.animatedCard} ${styles.delay1}`}>
+        <div className={styles.statCard}>
           <div className={styles.statTop}>
             <span className={styles.statLabel}>Total Patients</span>
             <div className={`${styles.statIcon} ${styles.iconCyan}`}>
               <Users size={20} />
             </div>
           </div>
-          <div className={styles.statValue}>{summary?.totalPatients || 0}</div>
+          <div className={styles.statValue}>
+            <CountUp value={summary?.totalPatients || 0} />
+          </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500)' }}>
-            +{summary?.newPatients || 0} new in range
+            +<CountUp value={summary?.newPatients || 0} /> registered in range
           </span>
         </div>
 
-        <div className={`${styles.statCard} ${styles.animatedCard} ${styles.delay2}`}>
+        <div className={styles.statCard}>
           <div className={styles.statTop}>
             <span className={styles.statLabel}>Appointments</span>
             <div className={`${styles.statIcon} ${styles.iconGreen}`}>
               <Calendar size={20} />
             </div>
           </div>
-          <div className={styles.statValue}>{summary?.totalAppointments || 0}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-success-600)' }}>
-            {summary?.completedAppointments || 0} Completed
+          <div className={styles.statValue}>
+            <CountUp value={summary?.totalAppointments || 0} />
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-success-600)', fontWeight: 600 }}>
+            <CountUp value={summary?.completedAppointments || 0} /> Completed
           </span>
         </div>
 
-        <div className={`${styles.statCard} ${styles.animatedCard} ${styles.delay3}`}>
+        <div className={styles.statCard}>
           <div className={styles.statTop}>
             <span className={styles.statLabel}>Revenue Collected</span>
             <div className={`${styles.statIcon} ${styles.iconPurple}`}>
@@ -573,29 +357,29 @@ const ReportsPage = () => {
             </div>
           </div>
           <div className={styles.statValue}>
-            Rs. {(summary?.totalRevenue || 0).toLocaleString()}
+            <CountUp value={summary?.totalRevenue || 0} prefix="Rs. " />
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500)' }}>
-            Rs. {(summary?.totalBilled || 0).toLocaleString()} Billed
+            <CountUp value={summary?.totalBilled || 0} prefix="Rs. " /> Billed
           </span>
         </div>
 
-        <div className={`${styles.statCard} ${styles.animatedCard} ${styles.delay4}`}>
+        <div className={styles.statCard}>
           <div className={styles.statTop}>
-            <span className={styles.statLabel}>Outstanding Balance</span>
+            <span className={styles.statLabel}>Outstanding Due</span>
             <div className={`${styles.statIcon} ${styles.iconOrange}`}>
               <TrendingUp size={20} />
             </div>
           </div>
-          <div className={styles.statValue} style={{ color: summary?.outstandingBalance > 0 ? 'var(--color-warning-600)' : 'inherit' }}>
-            Rs. {(summary?.outstandingBalance || 0).toLocaleString()}
+          <div className={styles.statValue} style={{ color: (summary?.outstandingBalance || 0) > 0 ? 'var(--color-warning-600)' : 'inherit' }}>
+            <CountUp value={summary?.outstandingBalance || 0} prefix="Rs. " />
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500)' }}>
-            {summary?.totalInvoices || 0} Invoices Issued
+            <CountUp value={summary?.totalInvoices || 0} /> Total Invoices Issued
           </span>
         </div>
 
-        <div className={`${styles.statCard} ${styles.animatedCard} ${styles.delay5}`}>
+        <div className={styles.statCard}>
           <div className={styles.statTop}>
             <span className={styles.statLabel}>Stock Alerts</span>
             <div className={`${styles.statIcon} ${styles.iconRed}`}>
@@ -603,207 +387,273 @@ const ReportsPage = () => {
             </div>
           </div>
           <div className={styles.statValue} style={{ color: (inventoryStats?.lowStockCount ?? summary?.lowStockAlerts ?? 0) > 0 ? 'var(--color-danger-600)' : 'inherit' }}>
-            {inventoryStats?.lowStockCount ?? summary?.lowStockAlerts ?? 0}
+            <CountUp value={inventoryStats?.lowStockCount ?? summary?.lowStockAlerts ?? 0} />
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-500)' }}>
-            Low Inventory Items
+            Medicines below threshold
           </span>
         </div>
       </div>
 
-      {/* Main Grid: Revenue & Patients */}
+      {/* Grid: Revenue & Patients */}
       <div className={styles.grid2Col}>
         {/* Revenue Analytics Card */}
         {showRevenue && (
-          <div className={`${styles.animatedCard} ${styles.delay1}`}>
-            <Card padding="24px">
-              <div className={styles.cardTitle}>
-                <div className={styles.cardTitleLeft}>
-                  <DollarSign size={18} style={{ color: 'var(--color-success-600)' }} />
-                  Revenue & Financial Collections
-                </div>
-                <Badge variant="success">Financials</Badge>
+          <Card padding="24px">
+            <div className={styles.cardTitle}>
+              <div className={styles.cardTitleLeft}>
+                <DollarSign size={18} style={{ color: 'var(--color-success-600)' }} />
+                Revenue & Financial Collections
               </div>
+              <Badge variant="success">Financials</Badge>
+            </div>
 
-              <GaugeRing
-                percentage={collectionRate}
-                title="Revenue Collection Rate"
-                subtitle={`${collectionRate}% of total billed invoices collected`}
-              />
+            <RadialGauge
+              percentage={collectionRate}
+              title="Revenue Collection Rate"
+              subtitle={`${collectionRate}% of total billed invoices have been successfully collected`}
+            />
 
-              <div className={styles.metricsSummaryGrid}>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue}>Rs. {(revenue?.totalCollected || 0).toLocaleString()}</div>
-                  <div className={styles.metricTileLabel}>Collected</div>
+            <div className={styles.metricsSummaryGrid}>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue}>
+                  <CountUp value={revenue?.totalCollected || 0} prefix="Rs. " />
                 </div>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue} style={{ color: 'var(--color-danger-600)' }}>
-                    Rs. {(revenue?.totalOutstanding || 0).toLocaleString()}
-                  </div>
-                  <div className={styles.metricTileLabel}>Balance Due</div>
-                </div>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue}>{revenue?.totalInvoices || 0}</div>
-                  <div className={styles.metricTileLabel}>Invoices</div>
-                </div>
+                <div className={styles.metricTileLabel}>Collected</div>
               </div>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue} style={{ color: 'var(--color-danger-600)' }}>
+                  <CountUp value={revenue?.totalOutstanding || 0} prefix="Rs. " />
+                </div>
+                <div className={styles.metricTileLabel}>Balance Due</div>
+              </div>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue}>
+                  <CountUp value={revenue?.totalInvoices || 0} />
+                </div>
+                <div className={styles.metricTileLabel}>Invoices</div>
+              </div>
+            </div>
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Payment Method Share (Donut Chart)
-              </h4>
-              <DonutChart data={revenue?.paymentMethods || {}} totalLabel="Collections" />
+            <div className={styles.chartSectionHeading}>
+              <span>Payment Method Distribution</span>
+            </div>
+            <InteractivePieChart
+              data={revenue?.paymentMethods || {}}
+              totalLabel="Collections"
+              prefix="Rs. "
+              defaultMode="donut"
+            />
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginTop: 24, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Revenue by Service Category (Bar Chart)
-              </h4>
-              <AnimatedBarChart data={revenue?.itemTypeRevenue || {}} prefix="Rs." />
-            </Card>
-          </div>
+            <div className={styles.chartSectionHeading}>
+              <span>Revenue by Service Category</span>
+            </div>
+            <InteractiveHistogramChart
+              data={revenue?.itemTypeRevenue || {}}
+              prefix="Rs. "
+              defaultMode="columns"
+            />
+
+            {revenue?.invoiceStatuses && (
+              <>
+                <div className={styles.chartSectionHeading}>
+                  <span>Invoice Settlement Status</span>
+                </div>
+                <InteractivePieChart
+                  data={revenue?.invoiceStatuses || {}}
+                  totalLabel="Invoices"
+                  defaultMode="donut"
+                />
+              </>
+            )}
+          </Card>
         )}
 
-        {/* Patient Analytics Card */}
+        {/* Patient Demographics Card */}
         {showPatients && (
-          <div className={`${styles.animatedCard} ${styles.delay2}`}>
-            <Card padding="24px">
-              <div className={styles.cardTitle}>
-                <div className={styles.cardTitleLeft}>
-                  <Users size={18} style={{ color: 'var(--color-primary-600)' }} />
-                  Patient Demographics & Distribution
-                </div>
-                <Badge variant="primary">Demographics</Badge>
+          <Card padding="24px">
+            <div className={styles.cardTitle}>
+              <div className={styles.cardTitleLeft}>
+                <Users size={18} style={{ color: 'var(--color-primary-600)' }} />
+                Patient Demographics & Distribution
               </div>
+              <Badge variant="primary">Demographics</Badge>
+            </div>
 
-              <div className={styles.metricsSummaryGrid}>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue}>{patientStats?.totalPatients || 0}</div>
-                  <div className={styles.metricTileLabel}>Total Patients</div>
+            <div className={styles.metricsSummaryGrid}>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue}>
+                  <CountUp value={patientStats?.totalPatients || 0} />
                 </div>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue}>{patientStats?.registeredToday || 0}</div>
-                  <div className={styles.metricTileLabel}>New Today</div>
-                </div>
+                <div className={styles.metricTileLabel}>Total Patients</div>
               </div>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue}>
+                  <CountUp value={patientStats?.registeredToday || 0} />
+                </div>
+                <div className={styles.metricTileLabel}>Registered Today</div>
+              </div>
+            </div>
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Gender Breakdown (Donut Chart)
-              </h4>
-              <DonutChart data={patientStats?.genderStats || {}} totalLabel="Patients" />
+            <div className={styles.chartSectionHeading}>
+              <span>Gender Distribution</span>
+            </div>
+            <InteractivePieChart
+              data={patientStats?.genderStats || {}}
+              totalLabel="Patients"
+              defaultMode="donut"
+            />
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginTop: 24, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Age Group Brackets (Bar Chart)
-              </h4>
-              <AnimatedBarChart data={patientStats?.ageGroupStats || {}} />
+            <div className={styles.chartSectionHeading}>
+              <span>Age Group Brackets (Distribution)</span>
+            </div>
+            <InteractiveHistogramChart
+              data={patientStats?.ageGroupStats || {}}
+              defaultMode="columns"
+            />
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginTop: 24, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Blood Group Distribution (Bar Chart)
-              </h4>
-              <AnimatedBarChart data={patientStats?.bloodGroupStats || {}} />
-            </Card>
-          </div>
+            <div className={styles.chartSectionHeading}>
+              <span>Blood Group Demographics</span>
+            </div>
+            <InteractiveHistogramChart
+              data={patientStats?.bloodGroupStats || {}}
+              defaultMode="columns"
+            />
+          </Card>
         )}
       </div>
 
-      {/* Grid: Appointments & Inventory */}
+      {/* Grid: Appointments & Pharmacy Inventory */}
       <div className={styles.grid2Col}>
-        {/* Appointment Analytics Card */}
+        {/* Appointment Operational Analytics Card */}
         {showAppointments && (
-          <div className={`${styles.animatedCard} ${styles.delay3}`}>
-            <Card padding="24px">
-              <div className={styles.cardTitle}>
-                <div className={styles.cardTitleLeft}>
-                  <Calendar size={18} style={{ color: 'var(--color-primary-700)' }} />
-                  Appointment Operational Analytics
-                </div>
-                <Badge variant="warning">Operations</Badge>
+          <Card padding="24px">
+            <div className={styles.cardTitle}>
+              <div className={styles.cardTitleLeft}>
+                <Calendar size={18} style={{ color: 'var(--color-primary-700)' }} />
+                Appointment Operational Analytics
               </div>
+              <Badge variant="warning">Operations</Badge>
+            </div>
 
-              <GaugeRing
-                percentage={completionRate}
-                title="Appointment Fulfillment Rate"
-                subtitle={`${completionRate}% of scheduled patient appointments completed`}
-              />
+            <RadialGauge
+              percentage={completionRate}
+              title="Appointment Fulfillment Rate"
+              subtitle={`${completionRate}% of scheduled patient appointments successfully completed`}
+            />
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Status Distribution (Donut Chart)
-              </h4>
-              <DonutChart data={appointmentStats?.statusStats || {}} totalLabel="Visits" />
+            <div className={styles.chartSectionHeading}>
+              <span>Visit Status Breakdown</span>
+            </div>
+            <InteractivePieChart
+              data={appointmentStats?.statusStats || {}}
+              totalLabel="Visits"
+              defaultMode="donut"
+            />
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginTop: 24, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Appointments per Physician (Bar Chart)
-              </h4>
-              <AnimatedBarChart data={appointmentStats?.doctorStats || {}} />
-            </Card>
-          </div>
+            <div className={styles.chartSectionHeading}>
+              <span>Appointments per Physician</span>
+            </div>
+            <InteractiveHistogramChart
+              data={appointmentStats?.doctorStats || {}}
+              defaultMode="columns"
+            />
+
+            {appointmentStats?.typeStats && (
+              <>
+                <div className={styles.chartSectionHeading}>
+                  <span>Appointment Types</span>
+                </div>
+                <InteractiveHistogramChart
+                  data={appointmentStats?.typeStats || {}}
+                  defaultMode="bars"
+                />
+              </>
+            )}
+          </Card>
         )}
 
         {/* Inventory Stock Health Card */}
         {showInventory && (
-          <div className={`${styles.animatedCard} ${styles.delay4}`}>
-            <Card padding="24px">
-              <div className={styles.cardTitle}>
-                <div className={styles.cardTitleLeft}>
-                  <Package size={18} style={{ color: 'var(--color-warning-500)' }} />
-                  Pharmacy Inventory Health Report
-                </div>
-                <Badge variant="danger">Pharmacy</Badge>
+          <Card padding="24px">
+            <div className={styles.cardTitle}>
+              <div className={styles.cardTitleLeft}>
+                <Package size={18} style={{ color: 'var(--color-warning-500)' }} />
+                Pharmacy Inventory Health & Stock
               </div>
+              <Badge variant="danger">Pharmacy</Badge>
+            </div>
 
-              <div className={styles.metricsSummaryGrid}>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue}>{inventoryStats?.totalItems || 0}</div>
-                  <div className={styles.metricTileLabel}>Medicines</div>
+            <div className={styles.metricsSummaryGrid}>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue}>
+                  <CountUp value={inventoryStats?.totalItems || 0} />
                 </div>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue} style={{ color: 'var(--color-danger-600)' }}>
-                    {inventoryStats?.lowStockCount || 0}
-                  </div>
-                  <div className={styles.metricTileLabel}>Low Stock</div>
-                </div>
-                <div className={styles.metricTile}>
-                  <div className={styles.metricTileValue}>
-                    Rs. {(inventoryStats?.totalStockValue || 0).toLocaleString()}
-                  </div>
-                  <div className={styles.metricTileLabel}>Stock Value</div>
-                </div>
+                <div className={styles.metricTileLabel}>Total Items</div>
               </div>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue} style={{ color: 'var(--color-danger-600)' }}>
+                  <CountUp value={inventoryStats?.lowStockCount || 0} />
+                </div>
+                <div className={styles.metricTileLabel}>Low Stock</div>
+              </div>
+              <div className={styles.metricTile}>
+                <div className={styles.metricTileValue}>
+                  <CountUp value={inventoryStats?.totalStockValue || 0} prefix="Rs. " />
+                </div>
+                <div className={styles.metricTileLabel}>Stock Value</div>
+              </div>
+            </div>
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: 12, color: 'var(--color-neutral-800)' }}>
-                Low Stock Medicines Requiring Supplier Reorder
-              </h4>
+            {inventoryStats?.categoryStats && (
+              <>
+                <div className={styles.chartSectionHeading}>
+                  <span>Medicine Category Breakdown</span>
+                </div>
+                <InteractivePieChart
+                  data={inventoryStats?.categoryStats || {}}
+                  totalLabel="Categories"
+                  defaultMode="donut"
+                />
+              </>
+            )}
 
-              <div className={styles.tableResponsive}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Medicine Name</th>
-                      <th>Category</th>
-                      <th>Quantity Left</th>
-                      <th>Reorder Limit</th>
+            <div className={styles.chartSectionHeading}>
+              <span>Low Stock Alerts Requiring Supplier Reorder</span>
+            </div>
+
+            <div className={styles.tableResponsive}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Medicine Name</th>
+                    <th>Category</th>
+                    <th>Stock Left</th>
+                    <th>Reorder Limit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(inventoryStats?.lowStockItems || []).map((item) => (
+                    <tr key={item._id}>
+                      <td style={{ fontWeight: 600 }}>{item.name}</td>
+                      <td>{item.category}</td>
+                      <td style={{ color: 'var(--color-danger-600)', fontWeight: 700 }}>
+                        {item.quantityInStock ?? item.quantity ?? 0} {item.unit || 'units'}
+                      </td>
+                      <td>{item.reorderThreshold ?? item.reorderLevel ?? 0} {item.unit || 'units'}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {(inventoryStats?.lowStockItems || []).map((item) => (
-                      <tr key={item._id}>
-                        <td style={{ fontWeight: 600 }}>{item.name}</td>
-                        <td>{item.category}</td>
-                        <td style={{ color: 'var(--color-danger-600)', fontWeight: 700 }}>
-                          {item.quantityInStock ?? item.quantity ?? 0} {item.unit || 'units'}
-                        </td>
-                        <td>{item.reorderThreshold ?? item.reorderLevel ?? 0} {item.unit || 'units'}</td>
-                      </tr>
-                    ))}
-                    {(inventoryStats?.lowStockItems || []).length === 0 && (
-                      <tr>
-                        <td colSpan={4} className={styles.emptyState}>
-                          All pharmacy items are sufficiently stocked. No reorder alerts!
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
+                  ))}
+                  {(inventoryStats?.lowStockItems || []).length === 0 && (
+                    <tr>
+                      <td colSpan={4} className={styles.emptyState}>
+                        All pharmacy items are sufficiently stocked. No reorder alerts!
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </div>
     </div>

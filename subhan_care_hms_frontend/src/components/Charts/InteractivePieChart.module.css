@@ -1,0 +1,216 @@
+/* ============================================================
+   Interactive Pie / Donut / Polar Chart Styles
+   ============================================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  position: relative;
+}
+
+.chartControls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.modeToggleGroup {
+  display: inline-flex;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  gap: 2px;
+}
+
+.modeBtn {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--color-neutral-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modeBtn:hover {
+  color: var(--color-neutral-900);
+}
+
+.modeBtnActive {
+  background: var(--color-surface-card);
+  color: var(--color-primary-600);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+.chartBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+}
+
+.svgWrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+}
+
+.chartSvg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.slicePath {
+  cursor: pointer;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, filter 0.2s ease;
+  transform-origin: 100px 100px;
+  stroke: var(--color-surface-card);
+  stroke-width: 1.5;
+}
+
+.slicePathActive {
+  filter: brightness(1.1) drop-shadow(0 4px 12px rgba(8, 145, 178, 0.35));
+  opacity: 1 !important;
+}
+
+.slicePathDimmed {
+  opacity: 0.45;
+}
+
+/* Center HUD for Donut & Polar */
+.centerHud {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.centerValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-neutral-900);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.centerLabel {
+  font-size: 0.65rem;
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.centerPercent {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary-600);
+  background: var(--color-primary-50);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  margin-top: 2px;
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.legendItem:hover,
+.legendItemActive {
+  background-color: var(--color-surface-card);
+  border-color: var(--color-primary-200);
+  box-shadow: var(--shadow-xs);
+  transform: translateX(3px);
+}
+
+.legendItemDimmed {
+  opacity: 0.4;
+}
+
+.legendBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendVal {
+  font-weight: 700;
+  color: var(--color-neutral-900);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legendPercent {
+  font-size: 0.725rem;
+  color: var(--color-neutral-500);
+  font-weight: 500;
+}
+
+.emptyState {
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--color-neutral-500);
+  font-size: 0.875rem;
+}

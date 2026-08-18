@@ -3,11 +3,9 @@
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-card);
   padding: var(--card-padding);
-  transition: all var(--transition-fast);
   box-shadow: var(--shadow-xs);
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .clickable { cursor: pointer; }
