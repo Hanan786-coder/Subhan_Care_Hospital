@@ -268,6 +268,13 @@ const completeAppointment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
 
+    if (req.user.role === 'DOCTOR') {
+      await ensureDoctorLinked(req.user);
+      if (!req.user.linkedEntityId || req.user.linkedEntityId.toString() !== appointment.doctorId.toString()) {
+        return res.status(403).json({ success: false, error: 'Not authorized: You can only complete your own assigned appointments' });
+      }
+    }
+
     appointment.status = 'Completed';
     await appointment.save();
 

@@ -65,6 +65,25 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id', 'x-auth-token']
 }));
 
+// Dotfile blocking middleware (prevents direct URL access to .env, .git, etc.)
+app.use((req, res, next) => {
+  if (req.path.includes('/.') || req.path.startsWith('/.') || req.url.includes('/.')) {
+    return res.status(403).json({ success: false, error: 'Forbidden: Access to hidden files is denied' });
+  }
+  next();
+});
+
+const rateLimit = require('express-rate-limit');
+// Global API rate limiter (prevents DDoS & brute force scanning)
+const globalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // max 300 requests per 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests. Please slow down.' }
+});
+app.use('/api', globalApiLimiter);
+
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));

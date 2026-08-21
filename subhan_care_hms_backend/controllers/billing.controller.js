@@ -153,15 +153,36 @@ const recordPayment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Invoice not found' });
     }
 
-    const payAmount = Number(req.body.amountPaid || invoice.balanceDue || invoice.total);
-    invoice.amountPaid = Math.min(invoice.total, (invoice.amountPaid || 0) + payAmount);
-    invoice.balanceDue = Math.max(invoice.total - invoice.amountPaid, 0);
+    if (invoice.status === 'Paid' && invoice.balanceDue <= 0) {
+      return res.status(400).json({ success: false, error: 'Invoice is already fully paid' });
+    }
+
+    const rawAmount = req.body.amountPaid !== undefined ? req.body.amountPaid : invoice.balanceDue;
+    const payAmount = parseFloat(rawAmount);
+
+    if (isNaN(payAmount) || payAmount <= 0) {
+      return res.status(400).json({ success: false, error: 'Payment amount must be a positive number greater than 0' });
+    }
+
+    const previousPaid = invoice.amountPaid || 0;
+    const maxPayable = invoice.balanceDue > 0 ? invoice.balanceDue : invoice.total;
+    const actualPayment = Math.min(payAmount, maxPayable);
+
+    invoice.amountPaid = Math.min(invoice.total, previousPaid + actualPayment);
+    invoice.balanceDue = Math.max(0, invoice.total - invoice.amountPaid);
     invoice.paymentMethod = req.body.paymentMethod || invoice.paymentMethod || 'Cash';
     invoice.status = invoice.balanceDue === 0 ? 'Paid' : 'Partially Paid';
     if (invoice.status === 'Paid') {
       invoice.paidAt = new Date();
     }
     await invoice.save();
+
+    await logAuditEvent(req, 'PAYMENT', 'Invoice', invoice._id, {
+      invoiceId: invoice.invoiceId,
+      paymentAmount: actualPayment,
+      paymentMethod: invoice.paymentMethod,
+      remainingBalance: invoice.balanceDue
+    });
 
     res.json({ success: true, data: invoice });
   } catch (error) {

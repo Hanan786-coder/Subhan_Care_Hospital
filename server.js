@@ -49,6 +49,24 @@ app.use(cors({
   },
   credentials: true
 }));
+// Dotfile blocking middleware
+app.use((req, res, next) => {
+  if (req.path.includes('/.') || req.path.startsWith('/.') || req.url.includes('/.')) {
+    return res.status(403).json({ success: false, error: 'Forbidden: Access to hidden files is denied' });
+  }
+  next();
+});
+
+const rateLimit = require('express-rate-limit');
+const globalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests. Please slow down.' }
+});
+app.use('/api', globalApiLimiter);
+
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));

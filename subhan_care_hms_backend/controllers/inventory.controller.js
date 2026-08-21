@@ -21,10 +21,28 @@ const getInventory = async (req, res) => {
 
 const createInventoryItem = async (req, res) => {
   try {
+    const { name, category, batchNumber, expiryDate, quantityInStock, reorderThreshold, unitPrice, supplierId, location } = req.body;
+    
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'Item name is required' });
+    }
+
+    const qty = Math.max(0, parseInt(quantityInStock, 10) || 0);
+    const threshold = Math.max(0, parseInt(reorderThreshold, 10) || 10);
+    const price = Math.max(0, parseFloat(unitPrice) || 0);
+
     const itemId = await buildId(InventoryItem, 'SC-INV-');
     const item = await InventoryItem.create({
       itemId,
-      ...req.body,
+      name: name.trim(),
+      category: category || 'Medicine',
+      batchNumber: batchNumber || `BAT-${Date.now().toString().slice(-6)}`,
+      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+      quantityInStock: qty,
+      reorderThreshold: threshold,
+      unitPrice: price,
+      supplierId: supplierId || null,
+      location: location || '',
       createdBy: req.user._id
     });
     await logAuditEvent(req, 'CREATE', 'InventoryItem', item._id, { name: item.name, batchNumber: item.batchNumber });
@@ -36,7 +54,18 @@ const createInventoryItem = async (req, res) => {
 
 const updateInventoryItem = async (req, res) => {
   try {
-    const item = await InventoryItem.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updateData = { ...req.body };
+    if (updateData.quantityInStock !== undefined) {
+      updateData.quantityInStock = Math.max(0, parseInt(updateData.quantityInStock, 10) || 0);
+    }
+    if (updateData.unitPrice !== undefined) {
+      updateData.unitPrice = Math.max(0, parseFloat(updateData.unitPrice) || 0);
+    }
+    if (updateData.reorderThreshold !== undefined) {
+      updateData.reorderThreshold = Math.max(0, parseInt(updateData.reorderThreshold, 10) || 0);
+    }
+
+    const item = await InventoryItem.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!item) {
       return res.status(404).json({ success: false, error: 'Inventory item not found' });
     }

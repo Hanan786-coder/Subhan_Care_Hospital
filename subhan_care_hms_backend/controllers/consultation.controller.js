@@ -26,6 +26,12 @@ const createConsultation = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Related patient or doctor not found' });
     }
 
+    if (req.user.role === 'DOCTOR') {
+      if (req.user.linkedEntityId && req.user.linkedEntityId.toString() !== appointment.doctorId.toString()) {
+        return res.status(403).json({ success: false, error: 'Not authorized: You can only create consultations for your own appointments' });
+      }
+    }
+
     const consultationId = await buildId(Consultation, 'SC-CON-');
     const consultation = await Consultation.create({
       consultationId,
@@ -68,6 +74,12 @@ const completeConsultation = async (req, res) => {
     const consultation = await Consultation.findById(req.params.id);
     if (!consultation) {
       return res.status(404).json({ success: false, error: 'Consultation not found' });
+    }
+
+    if (req.user.role === 'DOCTOR') {
+      if (req.user.linkedEntityId && req.user.linkedEntityId.toString() !== consultation.doctorId.toString()) {
+        return res.status(403).json({ success: false, error: 'Not authorized: You can only complete your own consultations' });
+      }
     }
 
     consultation.status = 'Completed';
