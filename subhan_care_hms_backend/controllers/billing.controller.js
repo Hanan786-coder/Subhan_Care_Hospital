@@ -86,24 +86,57 @@ const createInvoice = async (req, res) => {
       });
     }
 
-    const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || Number(item.quantity * item.unitPrice)), 0);
-    const discount = Number(req.body.discount || 0);
-    const tax = Number(req.body.tax || 0);
-    const total = subtotal - discount + tax;
-    const amountPaid = Number(req.body.amountPaid || 0);
-    const balanceDue = Math.max(total - amountPaid, 0);
+    // Server-side authoritative price verification & calculation
+    const validatedItems = [];
+    let calculatedSubtotal = 0;
+
+    for (const item of items) {
+      const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+      let unitPrice = Math.max(0, parseFloat(item.unitPrice) || 0);
+
+      // Verify item price from DB if inventory item
+      if (item.inventoryItemId && mongoose.Types.ObjectId.isValid(item.inventoryItemId)) {
+        const inv = await InventoryItem.findById(item.inventoryItemId);
+        if (inv && typeof inv.unitPrice === 'number') {
+          unitPrice = inv.unitPrice;
+        }
+      }
+
+      const itemAmount = qty * unitPrice;
+      calculatedSubtotal += itemAmount;
+
+      validatedItems.push({
+        ...item,
+        quantity: qty,
+        unitPrice,
+        amount: itemAmount
+      });
+    }
+
+    const discount = Math.max(0, Math.min(calculatedSubtotal, parseFloat(req.body.discount) || 0));
+    const taxRate = Math.max(0, parseFloat(req.body.taxRate) || 0);
+    const tax = parseFloat(req.body.tax) >= 0 ? parseFloat(req.body.tax) : (calculatedSubtotal - discount) * (taxRate / 100);
+    const total = Math.max(0, calculatedSubtotal - discount + tax);
+    const amountPaid = Math.max(0, Math.min(total, parseFloat(req.body.amountPaid) || 0));
+    const balanceDue = Math.max(0, total - amountPaid);
     const status = balanceDue === 0 ? 'Paid' : amountPaid > 0 ? 'Partially Paid' : 'Unpaid';
 
     const invoice = await Invoice.create({
       invoiceId,
-      ...req.body,
-      subtotal,
+      patientId: req.body.patientId,
+      appointmentId: req.body.appointmentId || null,
+      consultationId: req.body.consultationId || null,
+      prescriptionId: req.body.prescriptionId || null,
+      items: validatedItems,
+      paymentMethod: req.body.paymentMethod || 'Cash',
+      subtotal: calculatedSubtotal,
       discount,
       tax,
       total,
       amountPaid,
       balanceDue,
       status,
+      notes: req.body.notes ? String(req.body.notes).slice(0, 500) : '',
       issuedBy: req.user._id
     });
 

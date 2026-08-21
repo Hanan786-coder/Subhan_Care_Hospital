@@ -29,20 +29,42 @@ const connectDB = async () => {
     process.exit(1);
   }
 
+  // In production, require MONGO_URI and enforce TLS/SSL connection
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.MONGO_URI) {
+      console.error('FATAL: MONGO_URI environment variable is required in production mode. Server cannot start.');
+      process.exit(1);
+    }
+  }
+
   mongoose.set('bufferCommands', true);
 
   if (process.env.MONGO_URI) {
     try {
       const uri = process.env.MONGO_URI.replace('localhost', '127.0.0.1');
-      const conn = await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 1500
-      });
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      const connectOptions = {
+        serverSelectionTimeoutMS: 5000,
+        ...(isProduction && uri.includes('mongodb+srv://') ? { tls: true } : {})
+      };
+
+      const conn = await mongoose.connect(uri, connectOptions);
       console.log(`MongoDB Connected: ${conn.connection.host}`);
       await autoSeedIfEmpty();
       return;
     } catch (error) {
-      console.warn(`Local MongoDB not available. Switching seamlessly to MongoMemoryServer...`);
+      if (process.env.NODE_ENV === 'production') {
+        console.error('FATAL: Production MongoDB connection failed:', error.message);
+        process.exit(1);
+      }
+      console.warn(`Local MongoDB not available. Switching seamlessly to MongoMemoryServer for development...`);
     }
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: In-memory database is disabled in production. A valid MONGO_URI is required.');
+    process.exit(1);
   }
 
   try {
@@ -53,7 +75,7 @@ const connectDB = async () => {
     ]);
     const uri = mongod.getUri();
     await mongoose.connect(uri);
-    console.log('MongoMemoryServer active (in-memory database)');
+    console.log('MongoMemoryServer active (in-memory development database)');
     await autoSeedIfEmpty();
   } catch (memError) {
     console.warn(`MongoMemoryServer unavailable: ${memError.message}. Running in offline mode.`);

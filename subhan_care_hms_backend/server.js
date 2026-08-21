@@ -15,10 +15,60 @@ app.set('trust proxy', true);
 // Connect to database
 connectDB();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev')); // Logging
+const helmet = require('helmet');
+const crypto = require('crypto');
+
+// Security Headers via Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5000", "http://127.0.0.1:3000", "http://127.0.0.1:5000"]
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  frameguard: { action: 'deny' },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true
+}));
+
+// Request Correlation ID Middleware
+app.use((req, res, next) => {
+  req.correlationId = req.headers['x-correlation-id'] || crypto.randomUUID();
+  res.setHeader('x-correlation-id', req.correlationId);
+  next();
+});
+
+// CORS Configuration (Restrict allowed origins)
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:3000', 'http://127.0.0.1:5000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, same-origin)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS policy does not allow access from origin ${origin}`), false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id', 'x-auth-token']
+}));
+
+app.use(express.json({ limit: '1mb' }));
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -52,17 +102,24 @@ app.get('/', (req, res) => {
   res.send('Subhan Care HMS API is running...');
 });
 
-// Global Error Handler Middleware
+// Global Error Handler Middleware with Correlation ID & Safe Error Reporting
 const { formatErrorMessage } = require('./utils/validators');
 app.use((err, req, res, next) => {
-  console.error('Unhandled Server Error:', err.message);
+  const correlationId = req.correlationId || crypto.randomUUID();
+  console.error(`[Error ID: ${correlationId}] Unhandled Server Error:`, err.message);
   if (process.env.NODE_ENV !== 'production') {
     console.error(err.stack);
   }
-  const cleanMsg = formatErrorMessage(err);
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cleanMsg = isProduction 
+    ? 'An internal error occurred while processing the request' 
+    : formatErrorMessage(err);
+
   res.status(err.status || 500).json({
     success: false,
-    error: cleanMsg
+    error: cleanMsg,
+    correlationId
   });
 });
 

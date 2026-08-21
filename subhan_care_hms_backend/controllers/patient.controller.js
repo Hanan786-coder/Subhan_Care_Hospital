@@ -142,13 +142,14 @@ const getPatients = async (req, res) => {
     const { search } = req.query;
     let query = {};
 
-    if (search) {
+    if (search && typeof search === 'string') {
+      const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query = {
         $or: [
-          { patientId: { $regex: search, $options: 'i' } },
-          { fullName: { $regex: search, $options: 'i' } },
-          { cnic: { $regex: search, $options: 'i' } },
-          { contactNumber: { $regex: search, $options: 'i' } }
+          { patientId: { $regex: sanitizedSearch, $options: 'i' } },
+          { fullName: { $regex: sanitizedSearch, $options: 'i' } },
+          { cnic: { $regex: sanitizedSearch, $options: 'i' } },
+          { contactNumber: { $regex: sanitizedSearch, $options: 'i' } }
         ]
       };
     }

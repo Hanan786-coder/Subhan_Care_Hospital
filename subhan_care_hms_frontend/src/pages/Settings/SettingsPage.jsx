@@ -78,12 +78,7 @@ const SettingsPage = () => {
     setIsSubmittingPwd(true);
     try {
       const res = await changePassword({ currentPassword });
-      if (res.resetToken) {
-        setDevOtp(res.resetToken);
-        toast.success(`OTP generated & sent: ${res.resetToken}`);
-      } else {
-        toast.success('Verification OTP sent to your registered email');
-      }
+      toast.success('Verification OTP sent to your registered email');
       setPwdStep(PWD_STEPS.OTP);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Incorrect current password');
@@ -288,12 +283,6 @@ const SettingsPage = () => {
             <p style={{ fontSize: '0.875rem', color: 'var(--color-neutral-600)', margin: 0 }}>
               A 6-digit verification code has been sent to <strong>{user?.email}</strong>. Please enter it below.
             </p>
-
-            {devOtp && (
-              <div className={styles.devBanner}>
-                🔐 Dev Mode OTP Code: <strong>{devOtp}</strong>
-              </div>
-            )}
 
             <Input
               label="Verification OTP Code"

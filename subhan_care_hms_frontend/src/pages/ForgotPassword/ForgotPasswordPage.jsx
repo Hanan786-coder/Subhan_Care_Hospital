@@ -41,12 +41,7 @@ const ForgotPasswordPage = () => {
     try {
       setIsLoading(true);
       const res = await forgotPassword(normalizedEmail);
-      if (res.resetToken) {
-        setGeneratedOtp(res.resetToken);
-        toast.success(`Reset OTP generated: ${res.resetToken}`);
-      } else {
-        toast.success(res.message || 'Verification OTP sent to your email.');
-      }
+      toast.success(res.message || 'Verification OTP sent to your registered email.');
       setStep(STEPS.OTP);
     } catch (error) {
       const msg = error.response?.data?.error || error.message || 'No account found with this email address';
@@ -193,21 +188,6 @@ const ForgotPasswordPage = () => {
                 <h2>Verify OTP</h2>
                 <p>Enter the 6-digit OTP code sent to {email}</p>
               </div>
-
-              {generatedOtp && (
-                <div style={{
-                  backgroundColor: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  color: '#1e40af',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  marginBottom: '1rem',
-                  textAlign: 'center'
-                }}>
-                  🔐 Dev Mode OTP: <strong>{generatedOtp}</strong>
-                </div>
-              )}
 
               <form onSubmit={handleVerifyOtp} className={styles.form}>
                 <Input
