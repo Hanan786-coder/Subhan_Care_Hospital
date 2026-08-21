@@ -25,7 +25,8 @@ const autoSeedIfEmpty = async () => {
 
 const connectDB = async () => {
   if (!process.env.JWT_SECRET) {
-    process.env.JWT_SECRET = 'subhan_care_hms_jwt_secret_key_2026';
+    console.error('FATAL: JWT_SECRET environment variable is not set. Server cannot start securely.');
+    process.exit(1);
   }
 
   mongoose.set('bufferCommands', true);
@@ -40,7 +41,7 @@ const connectDB = async () => {
       await autoSeedIfEmpty();
       return;
     } catch (error) {
-      console.warn(`Local MongoDB not detected on port 27017 (${error.message}). Switching seamlessly to MongoMemoryServer...`);
+      console.warn(`Local MongoDB not available. Switching seamlessly to MongoMemoryServer...`);
     }
   }
 
@@ -52,7 +53,7 @@ const connectDB = async () => {
     ]);
     const uri = mongod.getUri();
     await mongoose.connect(uri);
-    console.log(`MongoMemoryServer active at ${uri}`);
+    console.log('MongoMemoryServer active (in-memory database)');
     await autoSeedIfEmpty();
   } catch (memError) {
     console.warn(`MongoMemoryServer unavailable: ${memError.message}. Running in offline mode.`);

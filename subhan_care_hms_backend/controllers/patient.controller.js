@@ -4,7 +4,7 @@
  */
 const Patient = require('../models/Patient');
 const { generateId } = require('../utils/generateId');
-const { formatCNIC } = require('../utils/validators');
+const { formatCNIC, safeErrorMessage } = require('../utils/validators');
 
 const parseAllergies = (allergies) => {
   if (!allergies) return [];
@@ -133,7 +133,7 @@ const registerPatient = async (req, res) => {
 
     res.status(201).json({ success: true, data: patient });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -156,7 +156,7 @@ const getPatients = async (req, res) => {
     const patients = await Patient.find(query).sort({ registrationDate: -1 });
     res.status(200).json({ success: true, count: patients.length, data: patients });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -168,7 +168,7 @@ const getPatientById = async (req, res) => {
     }
     res.status(200).json({ success: true, data: patient });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -198,7 +198,7 @@ const updatePatient = async (req, res) => {
 
     res.status(200).json({ success: true, data: patient });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -212,7 +212,7 @@ const deletePatient = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Patient permanently deleted', data: patient });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

@@ -19,6 +19,14 @@ const Invoice = require('../models/Invoice');
 const AuditLog = require('../models/AuditLog');
 
 const seedUsers = async () => {
+  // ⚠️ SECURITY: These are DEMO-ONLY passwords for development/testing.
+  // This seeder must NEVER run in production. All production accounts
+  // should be created through the admin UI with strong, unique passwords.
+  if (process.env.NODE_ENV === 'production') {
+    console.error('ABORT: Database seeder must not run in production environment.');
+    return false;
+  }
+
   try {
     if (mongoose.connection.readyState !== 1 && process.env.MONGO_URI) {
       await mongoose.connect(process.env.MONGO_URI);

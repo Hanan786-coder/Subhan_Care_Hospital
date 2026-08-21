@@ -1,5 +1,6 @@
 const MedicalHistory = require('../models/MedicalHistory');
 const Doctor = require('../models/Doctor');
+const { safeErrorMessage } = require('../utils/validators');
 
 const getMedicalHistory = async (req, res) => {
   try {
@@ -21,7 +22,7 @@ const getMedicalHistory = async (req, res) => {
 
     res.json({ success: true, data: history });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -47,7 +48,7 @@ const addHistoryCorrection = async (req, res) => {
 
     res.json({ success: true, data: history });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

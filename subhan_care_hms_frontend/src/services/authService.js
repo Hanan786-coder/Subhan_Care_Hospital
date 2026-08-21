@@ -53,3 +53,9 @@ export const confirmPasswordChange = async (data) => {
   const response = await api.put('/auth/confirm-password-change', data);
   return response.data;
 };
+
+export const deleteAccount = async () => {
+  const response = await api.delete('/auth/account');
+  return response.data;
+};
+

@@ -4,6 +4,7 @@
  */
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
+const { safeErrorMessage } = require('../utils/validators');
 const Patient = require('../models/Patient');
 const User = require('../models/User');
 
@@ -172,7 +173,7 @@ const getAppointments = async (req, res) => {
 
     res.json({ success: true, data: appointments });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -213,7 +214,7 @@ const bookAppointment = async (req, res) => {
 
     res.status(201).json({ success: true, data: appointment });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -239,7 +240,7 @@ const rescheduleAppointment = async (req, res) => {
 
     res.status(200).json({ success: true, data: appointment });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -256,7 +257,7 @@ const cancelAppointment = async (req, res) => {
 
     res.json({ success: true, data: appointment });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -272,7 +273,7 @@ const completeAppointment = async (req, res) => {
 
     res.json({ success: true, data: appointment });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -302,7 +303,7 @@ const getAvailableAppointmentSlots = async (req, res) => {
 
     res.json({ success: true, data: slots });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

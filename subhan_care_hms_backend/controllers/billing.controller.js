@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Invoice = require('../models/Invoice');
+const { safeErrorMessage } = require('../utils/validators');
 const InventoryItem = require('../models/InventoryItem');
 const { logAuditEvent } = require('../middleware/auditLog');
 
@@ -21,7 +22,7 @@ const getInvoices = async (req, res) => {
       .sort({ issuedAt: -1 });
     res.json({ success: true, data: invoices });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -108,7 +109,7 @@ const createInvoice = async (req, res) => {
 
     res.status(201).json({ success: true, data: invoice });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -131,7 +132,7 @@ const recordPayment = async (req, res) => {
 
     res.json({ success: true, data: invoice });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

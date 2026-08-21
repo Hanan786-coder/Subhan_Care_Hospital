@@ -1,5 +1,6 @@
 const Consultation = require('../models/Consultation');
 const Appointment = require('../models/Appointment');
+const { safeErrorMessage } = require('../utils/validators');
 const MedicalHistory = require('../models/MedicalHistory');
 const Prescription = require('../models/Prescription');
 const Patient = require('../models/Patient');
@@ -58,7 +59,7 @@ const createConsultation = async (req, res) => {
 
     res.status(201).json({ success: true, data: { consultation, medicalHistory } });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -86,7 +87,7 @@ const completeConsultation = async (req, res) => {
 
     res.json({ success: true, data: consultation });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -101,7 +102,7 @@ const getConsultations = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, data: consultations });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

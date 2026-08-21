@@ -4,6 +4,7 @@
  */
 const Doctor = require('../models/Doctor');
 const { generateId } = require('../utils/generateId');
+const { safeErrorMessage } = require('../utils/validators');
 
 const User = require('../models/User');
 
@@ -59,7 +60,7 @@ const createDoctor = async (req, res) => {
 
     res.status(201).json({ success: true, data: doctor });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -73,7 +74,7 @@ const getDoctors = async (req, res) => {
     const doctors = await Doctor.find(query).populate('userId', 'name email status role');
     res.status(200).json({ success: true, count: doctors.length, data: doctors });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -85,7 +86,7 @@ const getDoctorById = async (req, res) => {
     }
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -104,7 +105,7 @@ const getMyDoctorProfile = async (req, res) => {
 
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -129,7 +130,7 @@ const updateDoctor = async (req, res) => {
 
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -154,7 +155,7 @@ const updateSchedule = async (req, res) => {
 
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -179,7 +180,7 @@ const deactivateDoctor = async (req, res) => {
 
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

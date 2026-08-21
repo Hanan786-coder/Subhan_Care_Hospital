@@ -5,7 +5,7 @@
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const jwt = require('jsonwebtoken');
-const { validatePasswordComplexity } = require('../utils/validators');
+const { validatePasswordComplexity, safeErrorMessage } = require('../utils/validators');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -82,7 +82,7 @@ const loginUser = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -115,10 +115,10 @@ const sendEmail = async ({ to, subject, text, html }) => {
         text,
         html
       });
-      console.log(`Email successfully sent to ${to} via SMTP`);
+      console.log(`Email successfully sent to [REDACTED] via SMTP`);
       return;
     } catch (smtpError) {
-      console.error('SMTP sending failed, falling back to local file logging:', smtpError);
+      console.error('SMTP sending failed, falling back to local file logging:', smtpError.message);
     }
   }
 
@@ -128,12 +128,12 @@ const sendEmail = async ({ to, subject, text, html }) => {
     fs.mkdirSync(emailsDir, { recursive: true });
   }
 
-  const fileName = `${to.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.txt`;
+  const fileName = `reset_email_${Date.now()}.txt`;
   const filePath = path.join(emailsDir, fileName);
-  const content = `To: ${to}\nSubject: ${subject}\nDate: ${new Date().toISOString()}\n\nText Content:\n${text}\n\nHTML Content:\n${html}`;
+  const content = `To: [REDACTED]\nSubject: ${subject}\nDate: ${new Date().toISOString()}\n\nText Content:\n${text}\n\nHTML Content:\n${html}`;
   
   fs.writeFileSync(filePath, content, 'utf8');
-  console.log(`[SIMULATED EMAIL] Reset OTP sent to ${to}. Saved to ${filePath}`);
+  console.log(`[SIMULATED EMAIL] Reset OTP email generated for user. Logged safely to local file system.`);
 };
 
 const getMe = async (req, res) => {
@@ -141,7 +141,7 @@ const getMe = async (req, res) => {
     const user = await User.findById(req.user.id);
     res.status(200).json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -197,12 +197,11 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password reset OTP generated and sent to email successfully. Valid for 15 minutes.',
-      resetToken // Return token for dev / verification workflow
+      message: 'Password reset OTP generated and sent to email successfully. Valid for 15 minutes.'
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -252,7 +251,7 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -285,7 +284,7 @@ const verifyOTP = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -309,7 +308,7 @@ const updateProfile = async (req, res) => {
 
     res.status(200).json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -358,11 +357,10 @@ const changePassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'OTP sent to your email',
-      resetToken // For dev mode
+      message: 'OTP sent to your email'
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -389,7 +387,7 @@ const verifyPasswordChangeOtp = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'OTP verified' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -425,7 +423,49 @@ const confirmPasswordChange = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Password updated successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
+  }
+};
+
+/**
+ * Delete / Anonymize Account (Data Deletion Flow)
+ */
+const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Anonymize user record to maintain relational integrity while scrubbing all PII
+    user.name = `Deleted User ${user.userId}`;
+    user.email = `deleted_${user._id}@subhancare.local`;
+    user.status = 'inactive';
+    user.passwordHash = 'DELETED_ACCOUNT';
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Record audit event for deletion
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        action: 'DELETE',
+        affectedEntity: 'User',
+        affectedRecordId: user.userId,
+        details: { message: 'User requested personal data deletion & account anonymization' },
+        ipAddress: req.ip || '127.0.0.1'
+      });
+    } catch (auditErr) {
+      console.error('Audit log failed during account deletion:', auditErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Your account and personal data have been successfully deleted and anonymized.'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -438,5 +478,7 @@ module.exports = {
   updateProfile,
   changePassword,
   verifyPasswordChangeOtp,
-  confirmPasswordChange
+  confirmPasswordChange,
+  deleteAccount
 };
+

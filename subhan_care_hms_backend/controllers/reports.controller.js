@@ -4,6 +4,7 @@
  */
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
+const { safeErrorMessage } = require('../utils/validators');
 const Invoice = require('../models/Invoice');
 const Prescription = require('../models/Prescription');
 const InventoryItem = require('../models/InventoryItem');
@@ -75,7 +76,7 @@ const getSummaryReport = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -132,7 +133,7 @@ const getRevenueReport = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -187,7 +188,7 @@ const getPatientReport = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -229,7 +230,7 @@ const getAppointmentReport = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -280,7 +281,7 @@ const getInventoryReport = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

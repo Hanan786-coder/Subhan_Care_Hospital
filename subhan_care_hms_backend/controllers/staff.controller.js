@@ -4,6 +4,7 @@
  */
 const Staff = require('../models/Staff');
 const { generateId } = require('../utils/generateId');
+const { safeErrorMessage } = require('../utils/validators');
 
 const User = require('../models/User');
 
@@ -52,7 +53,7 @@ const createStaff = async (req, res) => {
 
     res.status(201).json({ success: true, data: staff });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -69,7 +70,7 @@ const getStaff = async (req, res) => {
     const staff = await Staff.find(query).populate('userId', 'name email status role');
     res.status(200).json({ success: true, count: staff.length, data: staff });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -81,7 +82,7 @@ const getStaffById = async (req, res) => {
     }
     res.status(200).json({ success: true, data: staff });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -107,7 +108,7 @@ const updateStaff = async (req, res) => {
 
     res.status(200).json({ success: true, data: staff });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -132,7 +133,7 @@ const deactivateStaff = async (req, res) => {
 
     res.status(200).json({ success: true, data: staff });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

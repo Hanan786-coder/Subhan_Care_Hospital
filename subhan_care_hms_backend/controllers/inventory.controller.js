@@ -1,5 +1,6 @@
 const InventoryItem = require('../models/InventoryItem');
 const Supplier = require('../models/Supplier');
+const { safeErrorMessage } = require('../utils/validators');
 const { logAuditEvent } = require('../middleware/auditLog');
 
 const buildId = async (model, prefix) => {
@@ -14,7 +15,7 @@ const getInventory = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, data: items });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -29,7 +30,7 @@ const createInventoryItem = async (req, res) => {
     await logAuditEvent(req, 'CREATE', 'InventoryItem', item._id, { name: item.name, batchNumber: item.batchNumber });
     res.status(201).json({ success: true, data: item });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -42,7 +43,7 @@ const updateInventoryItem = async (req, res) => {
     await logAuditEvent(req, 'UPDATE', 'InventoryItem', item._id, { name: item.name });
     res.json({ success: true, data: item });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -80,7 +81,7 @@ const restockInventoryItem = async (req, res) => {
 
     res.json({ success: true, data: populatedItem, message: `Restocked ${qty} units of ${item.name}` });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -91,7 +92,7 @@ const createSupplier = async (req, res) => {
     await logAuditEvent(req, 'CREATE', 'Supplier', supplier._id, { name: supplier.name });
     res.status(201).json({ success: true, data: supplier });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 
@@ -100,7 +101,7 @@ const getSuppliers = async (req, res) => {
     const suppliers = await Supplier.find().sort({ createdAt: -1 });
     res.json({ success: true, data: suppliers });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: safeErrorMessage(error) });
   }
 };
 

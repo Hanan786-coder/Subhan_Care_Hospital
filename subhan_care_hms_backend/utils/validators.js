@@ -52,10 +52,23 @@ const formatErrorMessage = (error) => {
   return error.message || 'An internal error occurred while processing the request';
 };
 
+/**
+ * Returns a safe error message for API responses.
+ * In development: returns the actual error message for debugging.
+ * In production: returns a generic message to prevent leaking internals.
+ */
+const safeErrorMessage = (error) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return error.message || 'An internal error occurred';
+  }
+  return 'An internal error occurred while processing the request';
+};
+
 module.exports = {
   formatCNIC,
   validateEmail,
   validatePasswordComplexity,
-  formatErrorMessage
+  formatErrorMessage,
+  safeErrorMessage
 };
 

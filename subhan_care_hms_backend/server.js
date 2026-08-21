@@ -55,7 +55,10 @@ app.get('/', (req, res) => {
 // Global Error Handler Middleware
 const { formatErrorMessage } = require('./utils/validators');
 app.use((err, req, res, next) => {
-  console.error('Unhandled Server Error:', err);
+  console.error('Unhandled Server Error:', err.message);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
+  }
   const cleanMsg = formatErrorMessage(err);
   res.status(err.status || 500).json({
     success: false,

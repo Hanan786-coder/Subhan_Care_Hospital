@@ -6,12 +6,13 @@ import {
   updateProfile,
   changePassword,
   verifyPasswordChangeOtp,
-  confirmPasswordChange
+  confirmPasswordChange,
+  deleteAccount
 } from '@/services/authService';
 import { ROLE_LABELS } from '@/constants/roles';
 import {
   User, Lock, Mail, Shield, CheckCircle, Sun, Moon,
-  LogOut, Key, ArrowRight, ShieldCheck, Check, Sparkles, Monitor
+  LogOut, Key, ArrowRight, ShieldCheck, Check, Sparkles, Monitor, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './Settings.module.css';
@@ -430,8 +431,40 @@ const SettingsPage = () => {
         </div>
 
         <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant="danger" icon={<LogOut size={16} />} onClick={logout}>
+          <Button variant="outline" icon={<LogOut size={16} />} onClick={logout}>
             Sign Out of Account
+          </Button>
+        </div>
+      </Card>
+
+      {/* SECTION 5: Data Privacy & Account Deletion */}
+      <Card padding="24px">
+        <div className={styles.sectionHeader} style={{ color: 'var(--color-danger-600, #dc2626)' }}>
+          <Trash2 size={20} />
+          Data Privacy & Account Deletion
+        </div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-neutral-600, #64748b)', margin: '12px 0 20px 0' }}>
+          You have the right to request deletion and anonymization of your personal profile data.
+          Executing this request permanently anonymizes your name, email, and credentials in accordance with privacy regulations.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="danger"
+            icon={<Trash2 size={16} />}
+            onClick={async () => {
+              if (window.confirm('Are you sure you want to permanently delete and anonymize your account? This action cannot be undone.')) {
+                try {
+                  await deleteAccount();
+                  toast.success('Your account and personal data have been anonymized.');
+                  logout();
+                } catch (err) {
+                  toast.error(err.response?.data?.error || 'Failed to delete account.');
+                }
+              }
+            }}
+          >
+            Delete My Account & Personal Data
           </Button>
         </div>
       </Card>
