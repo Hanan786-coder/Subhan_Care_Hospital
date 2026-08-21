@@ -1,13 +1,15 @@
 import React, { memo, useState, forwardRef } from 'react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import styles from './Input.module.css';
 
 /**
- * Input component
+ * Input component with rich Form Error & Success States
  * @param {Object} props
  */
 const Input = memo(forwardRef(({
   label,
   error,
+  success,
   helper,
   type = 'text',
   icon,
@@ -27,6 +29,9 @@ const Input = memo(forwardRef(({
     setShowPassword((prev) => !prev);
   };
 
+  const isSuccess = Boolean(success);
+  const successMessage = typeof success === 'string' ? success : null;
+
   return (
     <div className={`${styles.wrapper} ${className}`.trim()}>
       {label && (
@@ -42,11 +47,11 @@ const Input = memo(forwardRef(({
           type={inputType}
           disabled={disabled}
           readOnly={readOnly}
-          className={`${styles.input} ${icon ? styles.hasIcon : ''} ${error ? styles.hasError : ''} ${isPassword ? styles.hasPasswordToggle : ''}`.trim()}
+          className={`${styles.input} ${icon ? styles.hasIcon : ''} ${error ? styles.hasError : isSuccess ? styles.hasSuccess : ''} ${isPassword ? styles.hasPasswordToggle : (error || isSuccess) ? styles.hasStatusIcon : ''}`.trim()}
           aria-invalid={!!error}
           {...props}
         />
-        {isPassword && (
+        {isPassword ? (
           <button
             type="button"
             className={styles.passwordToggle}
@@ -55,11 +60,19 @@ const Input = memo(forwardRef(({
           >
             {showPassword ? 'Hide' : 'Show'}
           </button>
-        )}
+        ) : error ? (
+          <span className={styles.statusIconError} aria-hidden="true">
+            <AlertCircle size={16} />
+          </span>
+        ) : isSuccess ? (
+          <span className={styles.statusIconSuccess} aria-hidden="true">
+            <CheckCircle2 size={16} />
+          </span>
+        ) : null}
       </div>
-      {(error || helper) && (
-        <p className={`${styles.message} ${error ? styles.errorMessage : styles.helperMessage}`}>
-          {error || helper}
+      {(error || successMessage || helper) && (
+        <p className={`${styles.message} ${error ? styles.errorMessage : successMessage ? styles.successMessage : styles.helperMessage}`}>
+          {error || successMessage || helper}
         </p>
       )}
     </div>

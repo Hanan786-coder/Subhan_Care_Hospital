@@ -2,30 +2,42 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-modal, 400);
-  background-color: rgba(15, 23, 42, 0.56);
+  background-color: rgba(7, 17, 24, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn var(--transition-base, 200ms) ease-out;
+  animation: overlayFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   padding: var(--space-4, 1rem);
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 .modal {
-  background-color: var(--color-surface-card);
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
+  background-color: var(--color-surface-card, #ffffff);
+  border: 1px solid var(--color-border-soft, rgba(0, 0, 0, 0.1));
+  border-radius: var(--radius-card, 18px);
+  box-shadow:
+    0 24px 64px -12px rgba(0, 0, 0, 0.38),
+    0 12px 28px -8px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
   width: 100%;
-  max-width: 32rem;
-  max-height: calc(100vh - 2rem);
+  max-width: 34rem;
+  max-height: min(90vh, 840px);
   display: flex;
   flex-direction: column;
-  animation: slideIn var(--transition-base, 200ms) ease-out;
-  backdrop-filter: blur(14px);
+  animation: modalPopUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center center;
+  position: relative;
+  z-index: calc(var(--z-modal, 400) + 1);
+  overflow: hidden;
+  touch-action: auto;
 }
 
+/* Modal Sizes */
 .sm { max-width: 24rem; }
-.md { max-width: 32rem; }
+.md { max-width: 34rem; }
 .lg { max-width: 48rem; }
 .xl { max-width: 64rem; }
 .full { max-width: 92vw; }
@@ -35,48 +47,94 @@
   .modal { animation: none; }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes overlayFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(-1rem) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes modalPopUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
-  border-bottom: 1px solid var(--color-neutral-200, #e5e7eb);
+  padding: 1.125rem 1.5rem;
+  border-bottom: 1px solid var(--color-neutral-200, #e2e8f0);
+  background: var(--color-surface-card, #ffffff);
+  flex-shrink: 0;
+}
+
+:root[data-theme='dark'] .header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .title {
   margin: 0;
-  font-size: var(--font-size-lg, 1.125rem);
-  font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-neutral-900, #111827);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-neutral-900, #0f172a);
+  letter-spacing: -0.01em;
 }
 
 .closeButton {
   background: transparent;
-  border: none;
-  font-size: var(--font-size-xl, 1.25rem);
+  border: 1px solid transparent;
+  font-size: 1.35rem;
   line-height: 1;
-  color: var(--color-neutral-500, #6b7280);
+  color: var(--color-neutral-500, #64748b);
   cursor: pointer;
-  padding: var(--space-1, 0.25rem);
-  border-radius: var(--radius-sm, 0.25rem);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 8px);
+  transition: all 0.15s ease;
 }
 
 .closeButton:hover {
-  color: var(--color-neutral-900, #111827);
-  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--color-neutral-900, #0f172a);
+  background-color: var(--color-neutral-100, #f1f5f9);
+  border-color: var(--color-neutral-200, #e2e8f0);
+}
+
+:root[data-theme='dark'] .closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .body {
-  padding: var(--space-5, 1.25rem);
+  padding: 1.5rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+/* Custom sleek scrollbar for modal body */
+.body::-webkit-scrollbar {
+  width: 6px;
+}
+.body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.body::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300, #cbd5e1);
+  border-radius: 999px;
+}
+.body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400, #94a3b8);
 }

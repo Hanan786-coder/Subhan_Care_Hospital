@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, SearchSelect, CountUp, Skeleton } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, ConfirmationModal, Spinner, SearchSelect, CountUp, Skeleton } from '@/components/ui';
 import useDebounce from '@/hooks/useDebounce';
 import {
   getAppointments,
@@ -200,14 +200,27 @@ const AppointmentsPage = () => {
     }
   };
 
-  const handleCancel = async (appointment) => {
-    if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const handleCancel = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!appointmentToCancel) return;
+    setIsSubmitting(true);
     try {
-      await cancelAppointment(appointment._id, { reasonForCancellation: 'Cancelled by staff' });
+      await cancelAppointment(appointmentToCancel._id, { reasonForCancellation: 'Cancelled by staff' });
       toast.success('Appointment cancelled successfully');
+      setIsCancelModalOpen(false);
+      setAppointmentToCancel(null);
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to cancel appointment');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -463,7 +476,7 @@ const AppointmentsPage = () => {
           </div>
 
           <SearchSelect
-            label="Select Available Time Slot (Merged Single Searchable Input)"
+            label="Select Available Time Slot"
             required
             placeholder={loadingSlots ? 'Loading doctor slots...' : formattedSlotsOptions.length === 0 ? 'No slots available for this date' : 'Search & select time slot (e.g. 09:00 - 09:30)...'}
             options={formattedSlotsOptions}
@@ -580,6 +593,31 @@ const AppointmentsPage = () => {
           </div>
         </Modal>
       )}
+
+      {/* Cancellation Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setAppointmentToCancel(null);
+        }}
+        onConfirm={handleConfirmCancel}
+        title="Cancel Appointment"
+        message={
+          appointmentToCancel ? (
+            <span>
+              Are you sure you want to cancel the appointment for{' '}
+              <strong>{appointmentToCancel.patientId?.fullName || 'the patient'}</strong> with{' '}
+              <strong>{appointmentToCancel.doctorId?.fullName || 'the doctor'}</strong> on{' '}
+              <strong>{new Date(appointmentToCancel.date).toLocaleDateString()} ({appointmentToCancel.timeSlot?.start} - {appointmentToCancel.timeSlot?.end})</strong>?
+            </span>
+          ) : 'Are you sure you want to cancel this appointment?'
+        }
+        confirmText="Yes, Cancel Appointment"
+        cancelText="Keep Appointment"
+        variant="danger"
+        loading={isSubmitting}
+      />
     </div>
   );
 };

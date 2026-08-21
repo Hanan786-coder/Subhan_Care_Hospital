@@ -65,6 +65,49 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
+.hasSuccess {
+  border-color: var(--color-success-500, #10b981);
+}
+.hasSuccess:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.hasStatusIcon {
+  padding-right: 40px;
+}
+
+.statusIconError {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-danger-500, #ef4444);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: iconShake 200ms ease-in-out;
+}
+
+.statusIconSuccess {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-success-500, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: iconPop 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes iconShake {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  25% { transform: translateY(-50%) translateX(-2px); }
+  75% { transform: translateY(-50%) translateX(2px); }
+}
+
 .icon {
   position: absolute;
   left: 14px;
@@ -111,11 +154,23 @@
 .message {
   margin: 0;
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .errorMessage {
   font-size: 12px;
   color: var(--color-danger-500);
+}
+
+.successMessage {
+  font-size: 12px;
+  color: var(--color-success-600, #059669);
+}
+
+:root[data-theme='dark'] .successMessage {
+  color: var(--color-success-400, #34d399);
 }
 
 .helperMessage {
