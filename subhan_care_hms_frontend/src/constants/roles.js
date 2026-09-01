@@ -141,7 +141,6 @@ export const ROLE_MENU_CONFIG = {
   [ROLES.PHARMACIST]: [
     'dashboard',
     'patients',
-    'prescriptions',
     'inventory',
     'settings',
   ],

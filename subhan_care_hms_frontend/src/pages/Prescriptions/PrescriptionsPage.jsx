@@ -15,11 +15,10 @@ import styles from './Prescriptions.module.css';
 const PrescriptionsPage = () => {
   const { user } = useAuth();
   const isDoctor = user?.role === ROLES.DOCTOR;
-  const isPharmacist = user?.role === ROLES.PHARMACIST;
   const isAdmin = user?.role === ROLES.ADMIN;
 
   const canCreate = isDoctor;
-  const canDispense = isAdmin || isPharmacist;
+  const canDispense = isAdmin;
 
   const [prescriptions, setPrescriptions] = useState([]);
   const [patients, setPatients] = useState([]);
