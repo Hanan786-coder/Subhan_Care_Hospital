@@ -48,7 +48,7 @@ const AppointmentsPage = () => {
   const isReceptionist = user?.role === ROLES.RECEPTIONIST;
   const isAdmin = user?.role === ROLES.ADMIN;
 
-  const canBook = isAdmin || isReceptionist;
+  const canBook = isReceptionist;
   const canRescheduleCancel = isAdmin || isReceptionist;
   const canComplete = isAdmin || isDoctor;
 

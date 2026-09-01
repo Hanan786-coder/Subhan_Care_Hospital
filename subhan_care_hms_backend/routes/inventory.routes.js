@@ -9,10 +9,10 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/suppliers', authorize('ADMIN', 'PHARMACIST'), getSuppliers);
-router.post('/suppliers', authorize('ADMIN', 'PHARMACIST'), auditLogger('Supplier'), createSupplier);
+router.post('/suppliers', authorize('PHARMACIST'), auditLogger('Supplier'), createSupplier);
 router.get('/', authorize('ADMIN', 'PHARMACIST', 'DOCTOR', 'RECEPTIONIST', 'BILLING_STAFF'), getInventory);
-router.post('/', authorize('ADMIN', 'PHARMACIST'), auditLogger('InventoryItem'), createInventoryItem);
-router.patch('/:id/restock', authorize('ADMIN', 'PHARMACIST'), auditLogger('InventoryItem'), restockInventoryItem);
-router.put('/:id', authorize('ADMIN', 'PHARMACIST'), auditLogger('InventoryItem'), updateInventoryItem);
+router.post('/', authorize('PHARMACIST'), auditLogger('InventoryItem'), createInventoryItem);
+router.patch('/:id/restock', authorize('PHARMACIST'), auditLogger('InventoryItem'), restockInventoryItem);
+router.put('/:id', authorize('PHARMACIST'), auditLogger('InventoryItem'), updateInventoryItem);
 
 module.exports = router;

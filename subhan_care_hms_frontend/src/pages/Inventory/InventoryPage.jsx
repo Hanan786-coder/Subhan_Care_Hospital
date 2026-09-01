@@ -12,7 +12,7 @@ const CATEGORIES = ['Medicine', 'Surgical Supply', 'Diagnostic Kit', 'Consumable
 
 const InventoryPage = () => {
   const { user } = useAuth();
-  const canManage = [ROLES.ADMIN, ROLES.PHARMACIST].includes(user?.role);
+  const canManage = user?.role === ROLES.PHARMACIST;
 
   const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'suppliers'
   const [items, setItems] = useState([]);

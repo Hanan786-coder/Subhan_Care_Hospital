@@ -19,7 +19,7 @@ const formatInvoiceId = (idStr) => {
 
 const BillingPage = () => {
   const { user } = useAuth();
-  const canManage = [ROLES.ADMIN, ROLES.BILLING_STAFF].includes(user?.role);
+  const canManage = user?.role === ROLES.BILLING_STAFF;
 
   const [invoices, setInvoices] = useState([]);
   const [patients, setPatients] = useState([]);

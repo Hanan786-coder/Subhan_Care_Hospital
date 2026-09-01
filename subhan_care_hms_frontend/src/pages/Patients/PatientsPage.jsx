@@ -19,6 +19,7 @@ const PatientList = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const isReceptionist = user?.role === 'RECEPTIONIST';
+  const canRegister = isReceptionist;
   const canEdit = isAdmin || isReceptionist;
 
   const [patients, setPatients] = useState([]);
@@ -203,7 +204,7 @@ const PatientList = () => {
             Comprehensive patient demographic profiles, clinical history navigation, and role-restricted record management.
           </p>
         </div>
-        {canEdit && (
+        {canRegister && (
           <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenCreateModal}>
             Register New Patient
           </Button>

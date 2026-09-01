@@ -13,7 +13,7 @@ router.use(protect);
 
 router.get('/', authorize('RECEPTIONIST', 'ADMIN', 'DOCTOR'), getAppointments);
 router.get('/available-slots', authorize('RECEPTIONIST', 'ADMIN', 'DOCTOR'), getAvailableAppointmentSlots);
-router.post('/', authorize('RECEPTIONIST', 'ADMIN'), auditLogger('Appointment'), bookAppointment);
+router.post('/', authorize('RECEPTIONIST'), auditLogger('Appointment'), bookAppointment);
 router.put('/:id/reschedule', authorize('RECEPTIONIST', 'ADMIN'), auditLogger('Appointment'), rescheduleAppointment);
 router.put('/:id/cancel', authorize('RECEPTIONIST', 'ADMIN'), auditLogger('Appointment'), cancelAppointment);
 router.put('/:id/complete', authorize('DOCTOR', 'ADMIN'), auditLogger('Appointment'), completeAppointment);

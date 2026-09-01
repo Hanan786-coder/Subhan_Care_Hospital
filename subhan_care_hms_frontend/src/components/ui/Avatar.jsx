@@ -23,6 +23,8 @@ const Avatar = memo(({
           <img 
             src={src} 
             alt={alt} 
+            loading="lazy"
+            decoding="async"
             className={styles.image} 
             onError={() => setImgError(true)} 
           />

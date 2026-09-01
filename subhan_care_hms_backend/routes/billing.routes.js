@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', authorize('ADMIN', 'BILLING_STAFF'), getInvoices);
-router.post('/', authorize('ADMIN', 'BILLING_STAFF'), auditLogger('Invoice'), createInvoice);
-router.put('/:id/payment', authorize('ADMIN', 'BILLING_STAFF'), auditLogger('Invoice'), recordPayment);
+router.post('/', authorize('BILLING_STAFF'), auditLogger('Invoice'), createInvoice);
+router.put('/:id/payment', authorize('BILLING_STAFF'), auditLogger('Invoice'), recordPayment);
 
 module.exports = router;

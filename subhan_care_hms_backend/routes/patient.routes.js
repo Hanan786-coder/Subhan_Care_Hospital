@@ -19,7 +19,7 @@ router.use(protect); // All patient routes require auth
 
 router.route('/')
   .post(
-    authorize('ADMIN', 'RECEPTIONIST'), 
+    authorize('RECEPTIONIST'), 
     auditLogger('Patient'), 
     registerPatient
   )
