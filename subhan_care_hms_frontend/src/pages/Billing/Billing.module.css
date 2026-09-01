@@ -79,7 +79,13 @@
   font-size: 0.875rem;
   outline: none;
   cursor: pointer;
-  min-width: 150px;
+  min-width: 140px;
+  box-sizing: border-box;
+}
+
+.filterSelect:focus {
+  border-color: var(--color-primary-600, #0891b2);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
 }
 
 .tableResponsive {
@@ -154,14 +160,23 @@
 
 .itemRow {
   display: grid;
-  grid-template-columns: 2fr 3fr 1fr 2fr 2fr auto;
-  gap: 0.5rem;
+  grid-template-columns: 140px minmax(220px, 1fr) 90px 120px 130px auto;
+  gap: 0.6rem;
   align-items: flex-start;
   margin-bottom: 0.75rem;
-  padding: 0.5rem;
+  padding: 0.75rem;
   background-color: var(--color-neutral-50);
   border-radius: 8px;
   border: 1px solid var(--color-neutral-200);
+}
+
+.stockBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-neutral-600);
 }
 
 .itemGrid {
@@ -170,9 +185,48 @@
   gap: 0.75rem;
 }
 
+.invoiceSummaryBox {
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-border-soft, #e2e8f0);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summaryLabel {
+  font-size: 0.725rem;
+  color: var(--color-neutral-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.summaryValue {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-neutral-900);
+}
+
 .emptyState {
   padding: 3rem;
   text-align: center;
   color: var(--color-neutral-500);
   font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+  .itemRow {
+    grid-template-columns: 1fr 1fr;
+  }
+  .itemGrid {
+    grid-template-columns: 1fr;
+  }
 }

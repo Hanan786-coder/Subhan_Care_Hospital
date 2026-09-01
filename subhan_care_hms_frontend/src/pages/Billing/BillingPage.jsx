@@ -3,9 +3,10 @@ import { Card, CardBody, CardHeader, Button, Badge, Input, Modal, Spinner, Searc
 import useDebounce from '@/hooks/useDebounce';
 import { createInvoice, getInvoices, recordPayment } from '@/services/billingService';
 import { getPatients } from '@/services/patientService';
+import { getInventory } from '@/services/inventoryService';
 import { ROLES } from '@/constants/roles';
 import { useAuth } from '@/context/AuthContext';
-import { ReceiptText, Search, WalletCards, Download, Plus, Trash2, Printer, Filter, CreditCard } from 'lucide-react';
+import { ReceiptText, Search, WalletCards, Plus, Trash2, Printer, Filter, CreditCard, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './Billing.module.css';
 
@@ -13,16 +14,16 @@ const ITEM_TYPES = ['Consultation', 'Medicine', 'Lab Test', 'Procedure', 'Consum
 
 const formatInvoiceId = (idStr) => {
   if (!idStr) return 'N/A';
-  // Strip leading zeros after prefix (e.g., SC-INV-00001 -> SC-INV-1)
   return idStr.replace(/^(SC-INV(?:OC)?-)(?:0+)?(\d+)$/i, '$1$2');
 };
 
 const BillingPage = () => {
   const { user } = useAuth();
-  const canManage = user?.role === ROLES.BILLING_STAFF;
+  const canManage = user?.role === ROLES.BILLING_STAFF || user?.role === ROLES.ADMIN;
 
   const [invoices, setInvoices] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -32,17 +33,26 @@ const BillingPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPaymentInvoice, setSelectedPaymentInvoice] = useState(null);
-  const [paymentForm, setPaymentForm] = useState({ amountPaid: 0, paymentMethod: 'Cash' });
+  const [paymentForm, setPaymentForm] = useState({ amountPaid: '', paymentMethod: 'Cash' });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const initialFormState = {
     patientId: '',
     paymentMethod: 'Cash',
-    discount: 0,
-    tax: 0,
-    amountPaid: 0,
-    items: [{ type: 'Consultation', description: 'General Consultation', quantity: 1, unitPrice: 1500 }]
+    discount: '',
+    tax: '',
+    amountPaid: '',
+    items: [
+      {
+        type: 'Consultation',
+        description: 'General Consultation',
+        quantity: '1',
+        unitPrice: '1500',
+        inventoryItemId: '',
+        availableStock: 0
+      }
+    ]
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -50,12 +60,14 @@ const BillingPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [invoiceData, patientData] = await Promise.all([
+      const [invoiceData, patientData, inventoryData] = await Promise.all([
         getInvoices(statusFilter ? { status: statusFilter } : {}),
-        getPatients()
+        getPatients(),
+        getInventory()
       ]);
       setInvoices(invoiceData.data || []);
       setPatients(patientData.data || []);
+      setInventory(inventoryData.data || []);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to load billing data');
     } finally {
@@ -66,6 +78,13 @@ const BillingPage = () => {
   useEffect(() => {
     fetchData();
   }, [statusFilter]);
+
+  // Available medicines in pharmacy stock
+  const availableMedicines = useMemo(() => {
+    return inventory.filter(
+      (item) => item.quantityInStock > 0 && (item.category === 'Medicine' || !item.category || item.category === 'Consumable' || item.category === 'Surgical Supply')
+    );
+  }, [inventory]);
 
   const filteredInvoices = useMemo(() => {
     const query = debouncedSearch.toLowerCase().trim();
@@ -80,17 +99,48 @@ const BillingPage = () => {
   }, [invoices, debouncedSearch]);
 
   const totalRevenue = useMemo(() => {
-    return invoices.reduce((sum, invoice) => sum + (invoice.amountPaid || 0), 0);
+    return invoices.reduce((sum, invoice) => sum + (Number(invoice.amountPaid) || 0), 0);
   }, [invoices]);
 
   const outstanding = useMemo(() => {
-    return invoices.reduce((sum, invoice) => sum + (invoice.balanceDue || 0), 0);
+    return invoices.reduce((sum, invoice) => sum + (Number(invoice.balanceDue) || 0), 0);
   }, [invoices]);
+
+  // Live Calculations in Modal
+  const calculatedSubtotal = useMemo(() => {
+    return formData.items.reduce(
+      (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+      0
+    );
+  }, [formData.items]);
+
+  const calculatedTotal = useMemo(() => {
+    const sub = calculatedSubtotal;
+    const disc = Number(formData.discount) || 0;
+    const tx = Number(formData.tax) || 0;
+    return Math.max(0, sub - disc + tx);
+  }, [calculatedSubtotal, formData.discount, formData.tax]);
+
+  const calculatedBalanceDue = useMemo(() => {
+    const tot = calculatedTotal;
+    const paid = Number(formData.amountPaid) || 0;
+    return Math.max(0, tot - paid);
+  }, [calculatedTotal, formData.amountPaid]);
 
   const handleAddItem = () => {
     setFormData((prev) => ({
       ...prev,
-      items: [...prev.items, { type: 'Medicine', description: '', quantity: 1, unitPrice: 0 }]
+      items: [
+        ...prev.items,
+        {
+          type: 'Medicine',
+          description: '',
+          quantity: '1',
+          unitPrice: '',
+          inventoryItemId: '',
+          availableStock: 0
+        }
+      ]
     }));
   };
 
@@ -107,7 +157,50 @@ const BillingPage = () => {
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
-    updatedItems[index][field] = field === 'description' || field === 'type' ? value : Number(value);
+
+    if (field === 'type') {
+      updatedItems[index].type = value;
+      if (value === 'Medicine') {
+        updatedItems[index].description = '';
+        updatedItems[index].unitPrice = '';
+        updatedItems[index].inventoryItemId = '';
+        updatedItems[index].availableStock = 0;
+        updatedItems[index].quantity = '1';
+      } else if (value === 'Consultation') {
+        updatedItems[index].description = 'General Consultation';
+        updatedItems[index].unitPrice = '1500';
+        updatedItems[index].inventoryItemId = '';
+        updatedItems[index].availableStock = 0;
+        updatedItems[index].quantity = '1';
+      } else {
+        updatedItems[index].description = '';
+        updatedItems[index].unitPrice = '';
+        updatedItems[index].inventoryItemId = '';
+        updatedItems[index].availableStock = 0;
+        updatedItems[index].quantity = '1';
+      }
+    } else {
+      updatedItems[index][field] = value;
+    }
+
+    setFormData((prev) => ({ ...prev, items: updatedItems }));
+  };
+
+  const handleMedicineSelect = (index, selectedItem) => {
+    const updatedItems = [...formData.items];
+    if (selectedItem) {
+      updatedItems[index].inventoryItemId = selectedItem._id;
+      updatedItems[index].description = selectedItem.name;
+      updatedItems[index].unitPrice = selectedItem.unitPrice !== undefined ? String(selectedItem.unitPrice) : '0';
+      updatedItems[index].availableStock = selectedItem.quantityInStock;
+      updatedItems[index].quantity = '1';
+    } else {
+      updatedItems[index].inventoryItemId = '';
+      updatedItems[index].description = '';
+      updatedItems[index].unitPrice = '';
+      updatedItems[index].availableStock = 0;
+      updatedItems[index].quantity = '1';
+    }
     setFormData((prev) => ({ ...prev, items: updatedItems }));
   };
 
@@ -118,24 +211,66 @@ const BillingPage = () => {
       return;
     }
 
-    const invalidItem = formData.items.some((item) => !item.description.trim() || item.unitPrice <= 0);
-    if (invalidItem) {
-      toast.error('All invoice items must have a valid description and positive price');
-      return;
+    // Validate all items
+    for (let i = 0; i < formData.items.length; i++) {
+      const item = formData.items[i];
+      const qty = Number(item.quantity);
+      const price = Number(item.unitPrice);
+
+      if (!item.description.trim()) {
+        toast.error(`Please provide a description or select a medicine for item #${i + 1}`);
+        return;
+      }
+
+      if (isNaN(qty) || qty <= 0) {
+        toast.error(`Quantity for item #${i + 1} must be at least 1`);
+        return;
+      }
+
+      if (isNaN(price) || price < 0 || item.unitPrice === '') {
+        toast.error(`Please enter a valid price for item #${i + 1}`);
+        return;
+      }
+
+      if (item.type === 'Medicine') {
+        const matchedInv = inventory.find(
+          (inv) => inv._id === item.inventoryItemId || inv.name.toLowerCase() === item.description.trim().toLowerCase()
+        );
+
+        if (!matchedInv) {
+          toast.error(`Medicine "${item.description}" is not available in pharmacy inventory. Please select an available medicine from stock.`);
+          return;
+        }
+
+        if (matchedInv.quantityInStock <= 0) {
+          toast.error(`Medicine "${matchedInv.name}" is currently out of stock.`);
+          return;
+        }
+
+        if (qty > matchedInv.quantityInStock) {
+          toast.error(
+            `Requested quantity (${qty}) for "${matchedInv.name}" exceeds available pharmacy stock (${matchedInv.quantityInStock} units)`
+          );
+          return;
+        }
+      }
     }
 
     setIsSubmitting(true);
     try {
       await createInvoice({
-        ...formData,
-        amountPaid: Number(formData.amountPaid),
-        discount: Number(formData.discount),
-        tax: Number(formData.tax),
+        patientId: formData.patientId,
+        paymentMethod: formData.paymentMethod,
+        discount: Number(formData.discount) || 0,
+        tax: Number(formData.tax) || 0,
+        amountPaid: Number(formData.amountPaid) || 0,
         items: formData.items.map((item) => ({
-          ...item,
-          quantity: Number(item.quantity),
-          unitPrice: Number(item.unitPrice),
-          amount: Number(item.unitPrice * item.quantity)
+          type: item.type,
+          description: item.description.trim(),
+          inventoryItemId: item.inventoryItemId || undefined,
+          quantity: Number(item.quantity) || 1,
+          unitPrice: Number(item.unitPrice) || 0,
+          amount: (Number(item.quantity) || 1) * (Number(item.unitPrice) || 0)
         }))
       });
       toast.success('Invoice successfully generated');
@@ -152,7 +287,7 @@ const BillingPage = () => {
   const openPaymentModal = (invoice) => {
     setSelectedPaymentInvoice(invoice);
     setPaymentForm({
-      amountPaid: invoice.balanceDue || invoice.total,
+      amountPaid: String(invoice.balanceDue || invoice.total || ''),
       paymentMethod: invoice.paymentMethod || 'Cash'
     });
     setIsPaymentModalOpen(true);
@@ -162,10 +297,16 @@ const BillingPage = () => {
     e.preventDefault();
     if (!selectedPaymentInvoice) return;
 
+    const payVal = Number(paymentForm.amountPaid);
+    if (isNaN(payVal) || payVal <= 0) {
+      toast.error('Please enter a valid payment amount greater than 0');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await recordPayment(selectedPaymentInvoice._id, {
-        amountPaid: Number(paymentForm.amountPaid),
+        amountPaid: payVal,
         paymentMethod: paymentForm.paymentMethod
       });
       toast.success('Payment successfully recorded');
@@ -196,10 +337,10 @@ const BillingPage = () => {
           ${item.quantity}
         </td>
         <td style="padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #475569;">
-          Rs. ${item.unitPrice.toLocaleString()}
+          Rs. ${(item.unitPrice || 0).toLocaleString()}
         </td>
         <td style="padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #1e293b;">
-          Rs. ${(item.quantity * item.unitPrice).toLocaleString()}
+          Rs. ${((item.quantity || 1) * (item.unitPrice || 0)).toLocaleString()}
         </td>
       </tr>
     `
@@ -263,27 +404,27 @@ const BillingPage = () => {
             <table class="totals-table">
               <tr>
                 <td>Subtotal:</td>
-                <td style="text-align: right;">Rs. ${invoice.subtotal.toLocaleString()}</td>
+                <td style="text-align: right;">Rs. ${(invoice.subtotal || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td>Discount:</td>
-                <td style="text-align: right;">- Rs. ${invoice.discount.toLocaleString()}</td>
+                <td style="text-align: right;">- Rs. ${(invoice.discount || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td>Tax:</td>
-                <td style="text-align: right;">+ Rs. ${invoice.tax.toLocaleString()}</td>
+                <td style="text-align: right;">+ Rs. ${(invoice.tax || 0).toLocaleString()}</td>
               </tr>
               <tr class="grand-total">
                 <td>Total:</td>
-                <td style="text-align: right;">Rs. ${invoice.total.toLocaleString()}</td>
+                <td style="text-align: right;">Rs. ${(invoice.total || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td>Amount Paid:</td>
-                <td style="text-align: right; color: #16a34a; font-weight: 600;">Rs. ${invoice.amountPaid.toLocaleString()}</td>
+                <td style="text-align: right; color: #16a34a; font-weight: 600;">Rs. ${(invoice.amountPaid || 0).toLocaleString()}</td>
               </tr>
               <tr>
                 <td>Balance Due:</td>
-                <td style="text-align: right; color: #dc2626; font-weight: 600;">Rs. ${invoice.balanceDue.toLocaleString()}</td>
+                <td style="text-align: right; color: #dc2626; font-weight: 600;">Rs. ${(invoice.balanceDue || 0).toLocaleString()}</td>
               </tr>
             </table>
           </div>
@@ -307,13 +448,25 @@ const BillingPage = () => {
           </div>
         </div>
         <div className={styles.statsGrid}>
-          {[1, 2, 3].map(i => <Skeleton key={i} variant="card" height={110} />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="card" height={110} />
+          ))}
         </div>
         <Card>
           <CardBody>
-            {[1,2,3,4,5,6,7].map(i => (
-              <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-100)' }}>
-                {[80,150,100,90,80,90,90,80,70,60].map((w, j) => <Skeleton key={j} variant="text" width={w} height={14} />)}
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  gap: 12,
+                  padding: '12px 0',
+                  borderBottom: '1px solid var(--color-neutral-100)'
+                }}
+              >
+                {[80, 150, 100, 90, 80, 90, 90, 80, 70, 60].map((w, j) => (
+                  <Skeleton key={j} variant="text" width={w} height={14} />
+                ))}
               </div>
             ))}
           </CardBody>
@@ -327,7 +480,7 @@ const BillingPage = () => {
       <div className={styles.header}>
         <div className={styles.headerTitle}>
           <h2>Billing & Payment Collections</h2>
-          <p>Generate itemized invoices, track outstanding balances, collect patient payments, and issue receipts.</p>
+          <p>Generate itemized invoices, select pharmacy stock medicines, track balances, and issue receipts.</p>
         </div>
         {canManage && (
           <Button variant="primary" icon={<Plus size={16} />} onClick={() => setIsModalOpen(true)}>
@@ -339,7 +492,9 @@ const BillingPage = () => {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
-            <div className={styles.statValue}>Rs. <CountUp value={totalRevenue} /></div>
+            <div className={styles.statValue}>
+              Rs. <CountUp value={totalRevenue} />
+            </div>
             <div className={styles.statLabel}>Total Revenue Collected</div>
           </div>
         </div>
@@ -353,7 +508,9 @@ const BillingPage = () => {
         </div>
         <div className={styles.statCard}>
           <div className={styles.statInfo}>
-            <div className={styles.statValue}><CountUp value={invoices.length} /></div>
+            <div className={styles.statValue}>
+              <CountUp value={invoices.length} />
+            </div>
             <div className={styles.statLabel}>Invoices Issued</div>
           </div>
         </div>
@@ -386,95 +543,93 @@ const BillingPage = () => {
           </div>
         </CardHeader>
         <CardBody>
-          {false ? null : (
-            <div className={styles.tableResponsive}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Invoice ID</th>
-                    <th>Patient Name</th>
-                    <th>Issued Date</th>
-                    <th>Subtotal</th>
-                    <th>Discount</th>
-                    <th>Total</th>
-                    <th>Amount Paid</th>
-                    <th>Balance Due</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredInvoices.map((invoice) => (
-                    <tr key={invoice._id}>
-                      <td style={{ fontWeight: 700, color: 'var(--color-primary-700)' }}>
-                        {formatInvoiceId(invoice.invoiceId)}
-                      </td>
-                      <td>{invoice.patientId?.fullName || 'N/A'}</td>
-                      <td>{new Date(invoice.issuedAt).toLocaleDateString()}</td>
-                      <td>Rs. {invoice.subtotal?.toLocaleString()}</td>
-                      <td>Rs. {invoice.discount?.toLocaleString()}</td>
-                      <td style={{ fontWeight: 600 }}>Rs. {invoice.total?.toLocaleString()}</td>
-                      <td style={{ color: 'var(--color-success-600)', fontWeight: 600 }}>
-                        Rs. {invoice.amountPaid?.toLocaleString()}
-                      </td>
-                      <td
-                        style={{
-                          color: invoice.balanceDue > 0 ? 'var(--color-danger-600)' : 'inherit',
-                          fontWeight: invoice.balanceDue > 0 ? 600 : 'normal'
-                        }}
+          <div className={styles.tableResponsive}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Patient Name</th>
+                  <th>Issued Date</th>
+                  <th>Subtotal</th>
+                  <th>Discount</th>
+                  <th>Total</th>
+                  <th>Amount Paid</th>
+                  <th>Balance Due</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((invoice) => (
+                  <tr key={invoice._id}>
+                    <td style={{ fontWeight: 700, color: 'var(--color-primary-700)' }}>
+                      {formatInvoiceId(invoice.invoiceId)}
+                    </td>
+                    <td>{invoice.patientId?.fullName || 'N/A'}</td>
+                    <td>{new Date(invoice.issuedAt).toLocaleDateString()}</td>
+                    <td>Rs. {(invoice.subtotal || 0).toLocaleString()}</td>
+                    <td>Rs. {(invoice.discount || 0).toLocaleString()}</td>
+                    <td style={{ fontWeight: 600 }}>Rs. {(invoice.total || 0).toLocaleString()}</td>
+                    <td style={{ color: 'var(--color-success-600)', fontWeight: 600 }}>
+                      Rs. {(invoice.amountPaid || 0).toLocaleString()}
+                    </td>
+                    <td
+                      style={{
+                        color: invoice.balanceDue > 0 ? 'var(--color-danger-600)' : 'inherit',
+                        fontWeight: invoice.balanceDue > 0 ? 600 : 'normal'
+                      }}
+                    >
+                      Rs. {(invoice.balanceDue || 0).toLocaleString()}
+                    </td>
+                    <td>
+                      <Badge
+                        variant={
+                          invoice.status === 'Paid'
+                            ? 'success'
+                            : invoice.status === 'Partially Paid'
+                            ? 'warning'
+                            : 'danger'
+                        }
                       >
-                        Rs. {invoice.balanceDue?.toLocaleString()}
-                      </td>
-                      <td>
-                        <Badge
-                          variant={
-                            invoice.status === 'Paid'
-                              ? 'success'
-                              : invoice.status === 'Partially Paid'
-                              ? 'warning'
-                              : 'danger'
-                          }
+                        {invoice.status}
+                      </Badge>
+                    </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          icon={<Printer size={14} />}
+                          onClick={() => handlePrintReceipt(invoice)}
                         >
-                          {invoice.status}
-                        </Badge>
-                      </td>
-                      <td>
-                        <div className={styles.actions}>
+                          Receipt
+                        </Button>
+                        {canManage && invoice.status !== 'Paid' ? (
                           <Button
                             size="sm"
-                            variant="outline"
-                            icon={<Printer size={14} />}
-                            onClick={() => handlePrintReceipt(invoice)}
+                            variant="primary"
+                            icon={<WalletCards size={14} />}
+                            onClick={() => openPaymentModal(invoice)}
                           >
-                            Receipt
+                            Collect Payment
                           </Button>
-                          {canManage && invoice.status !== 'Paid' ? (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              icon={<WalletCards size={14} />}
-                              onClick={() => openPaymentModal(invoice)}
-                            >
-                              Collect Payment
-                            </Button>
-                          ) : (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-400)' }}>Settled</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredInvoices.length === 0 && (
-                    <tr>
-                      <td colSpan={10} className={styles.emptyState}>
-                        No invoices found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-neutral-400)' }}>Settled</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredInvoices.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className={styles.emptyState}>
+                      No invoices found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardBody>
       </Card>
 
@@ -490,16 +645,18 @@ const BillingPage = () => {
               Patient: <strong>{selectedPaymentInvoice?.patientId?.fullName || 'N/A'}</strong>
             </p>
             <p style={{ margin: '0 0 6px 0', fontSize: '0.875rem' }}>
-              Total Invoice Amount: <strong>Rs. {selectedPaymentInvoice?.total?.toLocaleString()}</strong>
+              Total Invoice Amount: <strong>Rs. {(selectedPaymentInvoice?.total || 0).toLocaleString()}</strong>
             </p>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-danger-600)' }}>
-              Outstanding Balance Due: <strong>Rs. {selectedPaymentInvoice?.balanceDue?.toLocaleString()}</strong>
+              Outstanding Balance Due: <strong>Rs. {(selectedPaymentInvoice?.balanceDue || 0).toLocaleString()}</strong>
             </p>
           </div>
 
           <Input
             label="Payment Amount to Collect (Rs.)"
             type="number"
+            min="1"
+            placeholder="Enter amount to pay"
             value={paymentForm.amountPaid}
             onChange={(e) => setPaymentForm((prev) => ({ ...prev, amountPaid: e.target.value }))}
             required
@@ -547,7 +704,7 @@ const BillingPage = () => {
               onChange={(val) => setFormData((prev) => ({ ...prev, patientId: val }))}
               getOptionLabel={(pat) => pat.fullName}
               getOptionValue={(pat) => pat._id}
-              getOptionSublabel={(pat) => pat.cnic ? `CNIC: ${pat.cnic}` : pat.contactNumber || ''}
+              getOptionSublabel={(pat) => (pat.cnic ? `CNIC: ${pat.cnic}` : pat.contactNumber || '')}
             />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -570,85 +727,207 @@ const BillingPage = () => {
 
           <div className={styles.itemsSection}>
             <div className={styles.itemsHeader}>
-              <h4>Itemized Bills</h4>
+              <h4>Itemized Billing Items</h4>
               <Button type="button" size="sm" variant="outline" icon={<Plus size={14} />} onClick={handleAddItem}>
                 Add Line Item
               </Button>
             </div>
 
-            {formData.items.map((item, index) => (
-              <div key={index} className={styles.itemRow}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <select
-                    value={item.type}
-                    onChange={(e) => handleItemChange(index, 'type', e.target.value)}
-                    className={styles.filterSelect}
-                    style={{ width: '100%', height: '40px' }}
-                    required
-                  >
-                    {ITEM_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+            {formData.items.map((item, index) => {
+              const isMed = item.type === 'Medicine';
+              const selectedMedInv = isMed
+                ? inventory.find(
+                    (i) => i._id === item.inventoryItemId || i.name.toLowerCase() === item.description.trim().toLowerCase()
+                  )
+                : null;
+              const maxStock = selectedMedInv ? selectedMedInv.quantityInStock : item.availableStock || 0;
+
+              return (
+                <div key={index} className={styles.itemRow}>
+                  {/* Item Type */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-600)' }}>
+                      Type
+                    </label>
+                    <select
+                      value={item.type}
+                      onChange={(e) => handleItemChange(index, 'type', e.target.value)}
+                      className={styles.filterSelect}
+                      style={{ width: '100%', height: '42px' }}
+                      required
+                    >
+                      {ITEM_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Description or Pharmacy Stock Selector */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-600)' }}>
+                      {isMed ? 'Select Pharmacy Medicine' : 'Item Description'}
+                    </label>
+                    {isMed ? (
+                      <div>
+                        <SearchSelect
+                          placeholder="Search available medicine from pharmacy..."
+                          options={availableMedicines}
+                          value={item.inventoryItemId}
+                          onChange={(val) => {
+                            const inv = availableMedicines.find((m) => m._id === val);
+                            handleMedicineSelect(index, inv);
+                          }}
+                          getOptionLabel={(m) => `${m.name} (Stock: ${m.quantityInStock})`}
+                          getOptionSublabel={(m) => `Price: Rs. ${m.unitPrice || 0} | Batch: ${m.batchNumber || 'N/A'}`}
+                          getOptionValue={(m) => m._id}
+                        />
+                        {selectedMedInv && (
+                          <div className={styles.stockBadge}>
+                            <Package size={13} color="var(--color-primary-600)" />
+                            <span style={{ color: 'var(--color-primary-700)', fontWeight: 600 }}>
+                              Available Stock: {maxStock} units (Rs. {selectedMedInv.unitPrice || 0}/unit)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Input
+                        placeholder="e.g. General Consultation / Lab Test"
+                        value={item.description}
+                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                        required
+                      />
+                    )}
+                  </div>
+
+                  {/* Qty */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-600)' }}>
+                      Qty
+                    </label>
+                    <Input
+                      placeholder="1"
+                      type="number"
+                      min="1"
+                      max={isMed && maxStock > 0 ? maxStock : undefined}
+                      value={item.quantity}
+                      onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* Unit Price */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-600)' }}>
+                      Price (Rs.)
+                    </label>
+                    <Input
+                      placeholder="0"
+                      type="number"
+                      min="0"
+                      value={item.unitPrice}
+                      onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* Total Amount */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-neutral-600)' }}>
+                      Amount (Rs.)
+                    </label>
+                    <Input
+                      placeholder="0"
+                      value={`Rs. ${(
+                        (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
+                      ).toLocaleString()}`}
+                      readOnly
+                    />
+                  </div>
+
+                  {/* Delete Button */}
+                  <div style={{ paddingTop: '22px' }}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      style={{ color: 'var(--color-danger-500)', padding: '8px' }}
+                      onClick={() => handleRemoveItem(index)}
+                      title="Remove item"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
                 </div>
-                <Input
-                  placeholder="Item details / description"
-                  value={item.description}
-                  onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                  required
-                />
-                <Input
-                  placeholder="Qty"
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                  required
-                />
-                <Input
-                  placeholder="Price (Rs.)"
-                  type="number"
-                  value={item.unitPrice}
-                  onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                  required
-                />
-                <Input
-                  placeholder="Total Amount"
-                  value={`Rs. ${(item.quantity * item.unitPrice).toLocaleString()}`}
-                  readOnly
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  style={{ color: 'var(--color-danger-500)', padding: '8px' }}
-                  onClick={() => handleRemoveItem(index)}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className={styles.itemGrid}>
             <Input
               label="Discount (Rs.)"
               type="number"
+              min="0"
+              placeholder="0"
               value={formData.discount}
-              onChange={(e) => setFormData((prev) => ({ ...prev, discount: Number(e.target.value) }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, discount: e.target.value }))}
             />
             <Input
               label="Tax Amount (Rs.)"
               type="number"
+              min="0"
+              placeholder="0"
               value={formData.tax}
-              onChange={(e) => setFormData((prev) => ({ ...prev, tax: Number(e.target.value) }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, tax: e.target.value }))}
             />
             <Input
               label="Amount Received (Rs.)"
               type="number"
+              min="0"
+              placeholder="0"
               value={formData.amountPaid}
-              onChange={(e) => setFormData((prev) => ({ ...prev, amountPaid: Number(e.target.value) }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, amountPaid: e.target.value }))}
             />
+          </div>
+
+          {/* Live Summary Calculation Box */}
+          <div className={styles.invoiceSummaryBox}>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Subtotal</span>
+              <span className={styles.summaryValue}>Rs. {calculatedSubtotal.toLocaleString()}</span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Discount</span>
+              <span className={styles.summaryValue} style={{ color: 'var(--color-danger-600)' }}>
+                - Rs. {(Number(formData.discount) || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Tax</span>
+              <span className={styles.summaryValue}>+ Rs. {(Number(formData.tax) || 0).toLocaleString()}</span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Net Total</span>
+              <span className={styles.summaryValue} style={{ color: 'var(--color-primary-700)' }}>
+                Rs. {calculatedTotal.toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Amount Received</span>
+              <span className={styles.summaryValue} style={{ color: 'var(--color-success-600)' }}>
+                Rs. {(Number(formData.amountPaid) || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Balance Due</span>
+              <span
+                className={styles.summaryValue}
+                style={{ color: calculatedBalanceDue > 0 ? 'var(--color-danger-600)' : 'var(--color-success-600)' }}
+              >
+                Rs. {calculatedBalanceDue.toLocaleString()}
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
