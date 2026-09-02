@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
-import { PUBLIC_ROUTES, PRIVATE_ROUTES } from '@/constants/routes';
+import { PUBLIC_ROUTES } from '@/constants/routes';
 import { ROLES } from '@/constants/roles';
 import DashboardLayout from '@/layouts/DashboardLayout';
 
@@ -86,7 +86,7 @@ export const AppRoutes = () => {
           <Route 
             path="prescriptions" 
             element={
-              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.PHARMACIST]}>
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR]}>
                 <PrescriptionsPage />
               </ProtectedRoute>
             } 
